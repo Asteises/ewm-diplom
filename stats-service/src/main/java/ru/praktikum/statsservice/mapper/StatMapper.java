@@ -3,7 +3,6 @@ package ru.praktikum.statsservice.mapper;
 import org.springframework.stereotype.Service;
 import ru.praktikum.statsservice.model.EndpointHit;
 import ru.praktikum.statsservice.model.dto.EndpointHitDto;
-import ru.praktikum.statsservice.model.dto.ViewStatsDto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

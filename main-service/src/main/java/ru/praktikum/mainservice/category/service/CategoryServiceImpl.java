@@ -96,7 +96,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryDto> getAllCategories(Integer from, Integer size) {
 
         // Записываем найденные в БД категории;
-        List<Category> categories = categoryStorage.findAll(PageRequest.of(from / size, size)).stream().toList();
+        List<Category> categories = categoryStorage.findAll(PageRequest.of(from / size, size)).stream().collect(Collectors.toList());
 
         log.info("Получаем все категории с параметрами: from={}, size={}", from, size);
         return categories.stream().map(CategoryMapper::categoryToCategoryDto).collect(Collectors.toList());

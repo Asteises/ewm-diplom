@@ -14,13 +14,11 @@ import ru.praktikum.mainservice.exception.NotFoundException;
 @RestControllerAdvice
 public class ErrorHandler {
 
-    //404
     @ExceptionHandler({NotFoundException.class})
     public ResponseEntity<String> userNotFoundHandler(final RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 
-    //400
     @ExceptionHandler({BadRequestException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse badRequestHandler(final RuntimeException e) {

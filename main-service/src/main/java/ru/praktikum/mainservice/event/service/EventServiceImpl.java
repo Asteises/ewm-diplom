@@ -153,7 +153,9 @@ public class EventServiceImpl implements EventService {
         User user = userService.checkUserAvailableInDb(userId);
 
         // Собираем все события принадлежащие пользователю;
-        List<Event> events = eventStorage.findEventByInitiator_Id(userId, PageRequest.of(from / size, size)).toList();
+        List<Event> events = eventStorage.findEventByInitiator_Id(userId, PageRequest.of(from / size, size))
+                .stream()
+                .collect(Collectors.toList());
 
         log.info("Получение пользователем userId={} списка созданных событий: eventsSize={}", user.getId(), events.size());
         return events.stream().map(EventMapper::fromEventToEventFullDto).collect(Collectors.toList());
@@ -339,7 +341,7 @@ public class EventServiceImpl implements EventService {
                         start,
                         end,
                         PageRequest.of(from / size, size))
-                .stream().toList();
+                .stream().collect(Collectors.toList());
 
         // Проверяем, что данные были найдены;
         if (events.isEmpty()) {
@@ -416,16 +418,16 @@ public class EventServiceImpl implements EventService {
                                 start,
                                 end,
                                 PageRequest.of(from / size, size))
-                        .stream().toList();
+                        .stream().collect(Collectors.toList());
 
         log.info("Найденные события: events={}", events);
 
         // Получаем все id событий;
-        List<Long> eventsIds = events.stream().map(Event::getId).toList();
+        List<Long> eventsIds = events.stream().map(Event::getId).collect(Collectors.toList());
         log.info("Найденные ids событий: eventsIds={}", eventsIds);
 
         // Мапим в EventFullDto, тут же засетим просмотры и запросы;
-        List<EventFullDto> result = eventsIds.stream().map(this::getPublicEventById).toList();
+        List<EventFullDto> result = eventsIds.stream().map(this::getPublicEventById).collect(Collectors.toList());
 
         log.info("Результат: result={}", result);
         return result;

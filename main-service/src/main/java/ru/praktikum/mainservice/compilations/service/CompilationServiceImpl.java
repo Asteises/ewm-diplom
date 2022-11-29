@@ -47,12 +47,12 @@ public class CompilationServiceImpl implements CompilationService {
             compilations = compilationStorage
                     .findAllByPinned(pinned, PageRequest.of(from / size, size))
                     .stream()
-                    .toList();
+                    .collect(Collectors.toList());
         } else {
             // Если нет, то собираем все что есть в БД;
             compilations = compilationStorage.findAll(PageRequest.of(from / size, size))
                     .stream()
-                    .toList();
+                    .collect(Collectors.toList());
         }
 
         // Создаем результирующий объект;
@@ -131,7 +131,7 @@ public class CompilationServiceImpl implements CompilationService {
 
         // Мапим события в лист EventShortDto;
         List<EventShortDto> eventShortDtos = events.stream()
-                .map(EventMapper::fromEventToEventShortDto).toList();
+                .map(EventMapper::fromEventToEventShortDto).collect(Collectors.toList());
 
         // Сетим события в результат;
         result.setEvents(eventShortDtos);

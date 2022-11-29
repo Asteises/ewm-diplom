@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
             log.info("Получаем всех пользователей: from={}, size={}", from, size);
         } else {
             users = userStorage.findUsersByIdIn(ids, PageRequest.of(from / size, size))
-                    .stream().toList();
+                    .stream().collect(Collectors.toList());
             log.info("Получаем всех пользователей: from={}, size={}, users={}", from, size, users.toString());
         }
 
