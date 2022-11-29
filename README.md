@@ -1,2 +1,2 @@
 # java-explore-with-me
-Template repository for ExploreWithMe project.
+ПР: https://github.com/Asteises/ewm-diplom/pulls
