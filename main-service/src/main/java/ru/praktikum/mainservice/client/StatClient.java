@@ -20,11 +20,13 @@ import java.util.Map;
 @Component
 public class StatClient extends BaseClient {
 
+    private final String getStatUrl = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
+
     @Autowired
-    public StatClient(@Value("${ewm-stats-service.url}") String url, RestTemplateBuilder builder) {
+    public StatClient(@Value("${ewm_stats_service_url}") String url, RestTemplateBuilder builder) {
         super(
                 builder
-                        .uriTemplateHandler(new DefaultUriBuilderFactory("http://localhost:9090"))
+                        .uriTemplateHandler(new DefaultUriBuilderFactory(url))
                         .requestFactory(HttpComponentsClientHttpRequestFactory::new)
                         .build()
         );
@@ -57,7 +59,7 @@ public class StatClient extends BaseClient {
         log.info("Из EventController пришел запрос с параметрами: parameters={}", parameters);
 
         // Направляем запрос с параметрами в сервис статистики, чтобы вернулся ответ ResponseEntity<Object>;
-        ResponseEntity<Object> response = get("/stats?start={start}&end={end}&uris={uris}&unique={unique}", parameters);
+        ResponseEntity<Object> response = get(getStatUrl, parameters);
 
         log.info("Ответ от сервиса статистики: response={}", response);
         return response;

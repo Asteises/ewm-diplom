@@ -13,7 +13,7 @@ services:
     depends_on:
       - stats-db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/ewm-stat
+      STATS_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/ewm-stat
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     networks:
@@ -44,10 +44,10 @@ services:
     depends_on:
       - ewm-db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
+      MAIN_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      EWM_STATS_SERVICE_URL: http://stats-service:9090
+      EWM_STATS_SERVICE_URL: http://stats-server:9090
     networks:
       - ewm-net
 
