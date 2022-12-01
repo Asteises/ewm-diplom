@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.category.mapper.CategoryMapper;
 import ru.praktikum.mainservice.event.enums.StateEnum;
 import ru.praktikum.mainservice.event.model.Event;
-import ru.praktikum.mainservice.event.model.Location;
 import ru.praktikum.mainservice.event.model.dto.AdminUpdateEventRequest;
 import ru.praktikum.mainservice.event.model.dto.EventFullDto;
 import ru.praktikum.mainservice.event.model.dto.EventShortDto;
@@ -39,8 +38,7 @@ public class EventMapper {
         event.setRequestModeration(newEventDto.getRequestModeration());
         event.setPaid(newEventDto.getPaid());
         event.setCreatedOn(LocalDateTime.now());
-        event.setLocationLat(newEventDto.getLocation().getLat().doubleValue());
-        event.setLocationLon(newEventDto.getLocation().getLon().doubleValue());
+        event.setLocation(newEventDto.getLocation());
         event.setParticipantLimit(newEventDto.getParticipantLimit().longValue());
 
         // Категорию проставляем в сервисе;
@@ -70,9 +68,7 @@ public class EventMapper {
         eventFullDto.setDescription(event.getDescription());
         eventFullDto.setParticipantLimit(event.getParticipantLimit().intValue());
 
-        eventFullDto.setLocation(new Location(
-                event.getLocationLat().floatValue(),
-                event.getLocationLon().floatValue()));
+        eventFullDto.setLocation(event.getLocation());
         eventFullDto.setRequestModeration(event.getRequestModeration());
 
         log.info("Мапим Event в EventFullDto: {}", eventFullDto);
@@ -134,8 +130,7 @@ public class EventMapper {
             event.setEventDate(eventDate);
         }
         if (adminUpdateEventRequest.getLocation() != null) {
-            event.setLocationLon(adminUpdateEventRequest.getLocation().getLon().doubleValue());
-            event.setLocationLat(adminUpdateEventRequest.getLocation().getLat().doubleValue());
+            event.setLocation(adminUpdateEventRequest.getLocation());
         }
         if (adminUpdateEventRequest.getPaid() != null) {
             event.setPaid(adminUpdateEventRequest.getPaid());

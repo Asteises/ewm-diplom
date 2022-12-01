@@ -349,17 +349,13 @@ public class EventServiceImpl implements EventService {
         }
 
         // Создаем результирующий объект;
-        List<EventShortDto> result = new ArrayList<>();
+        List<EventShortDto> result;
 
-        // Для каждого события сетим просмотры и запросы;
-        for (Event event : events) {
-
-            // Используем данный метод для получения просмотров и запросов на событие;
-            EventFullDto eventFullDto = getPublicEventById(event.getId());
-
-            // Мапим в EventShortDto и сохраняем в результат;
-            result.add(EventMapper.fromFullDtoToShortDto(eventFullDto));
-        }
+        // Получаем просмотры и запросы на события;
+        result = events.stream()
+                .map(EventMapper::fromEventToEventShortDto)
+                .map(this::setViewsAndConfReqToEventShortDto)
+                .collect(Collectors.toList());
 
         log.info("Выводим все публичные события : result={}", result);
         return result;
@@ -569,18 +565,6 @@ public class EventServiceImpl implements EventService {
     }
 
     /*
-    Метод проверяет количество подтвержденных запросов на участие в событии;
-    */
-    private Long getConfirmedRequests(long eventId) {
-
-        // Собираем все подтвержденные запросы на событие;
-        List<Request> confirmedRequests = requestStorage.findAllByEvent_IdAndStatus(eventId, "CONFIRMED");
-
-        log.info("Подтвержденных запросов у события eventId={}: confirmedRequests={}", eventId, confirmedRequests.size());
-        return (long) confirmedRequests.size();
-    }
-
-    /*
     Метод проверяет время начала события и время публикации;
      */
     private void checkEventStartDate(LocalDateTime eventDate, LocalDateTime publishedOn) {
@@ -601,6 +585,31 @@ public class EventServiceImpl implements EventService {
         if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
             throw new BadRequestException(String.format("Событие не может быть раньше, чем через два часа от текущего момента: eventDate=%s", eventDate));
         }
+    }
+
+    private EventShortDto setViewsAndConfReqToEventShortDto(EventShortDto eventShortDto) {
+
+        EventShortDto result = new EventShortDto();
+
+        long confirmedRequest = getConfirmedRequests(eventShortDto.getId());
+        int views = getViewsByEventId(eventShortDto.getId());
+
+        result.setConfirmedRequests(confirmedRequest);
+        result.setViews(views);
+
+        return result;
+    }
+
+    /*
+    Метод проверяет количество подтвержденных запросов на участие в событии;
+    */
+    private Long getConfirmedRequests(long eventId) {
+
+        // Собираем все подтвержденные запросы на событие;
+        List<Request> confirmedRequests = requestStorage.findAllByEvent_IdAndStatus(eventId, "CONFIRMED");
+
+        log.info("Подтвержденных запросов у события eventId={}: confirmedRequests={}", eventId, confirmedRequests.size());
+        return (long) confirmedRequests.size();
     }
 
     /*

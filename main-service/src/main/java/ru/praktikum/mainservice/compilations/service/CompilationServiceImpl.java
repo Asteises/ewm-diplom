@@ -14,7 +14,6 @@ import ru.praktikum.mainservice.event.service.EventService;
 import ru.praktikum.mainservice.exception.BadRequestException;
 import ru.praktikum.mainservice.exception.NotFoundException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +32,7 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     public List<CompilationDto> getAllCompilations(Boolean pinned, Integer from, Integer size) {
 
-        List<Compilation> compilations;
+        List<CompilationDto> compilations;
 
         // Проверяем все ли параметры пришли;
         if (pinned != null) {
@@ -41,29 +40,18 @@ public class CompilationServiceImpl implements CompilationService {
             compilations = compilationStorage
                     .findAllByPinned(pinned, PageRequest.of(from / size, size))
                     .stream()
+                    .map(CompilationMapper::fromCompToCompDto)
                     .collect(Collectors.toList());
         } else {
             // Если нет, то собираем все что есть в БД;
             compilations = compilationStorage.findAll(PageRequest.of(from / size, size))
                     .stream()
+                    .map(CompilationMapper::fromCompToCompDto)
                     .collect(Collectors.toList());
         }
 
-        // Создаем результирующий объект;
-        List<CompilationDto> result = new ArrayList<>();
-
-        // Для каждой подборки создаем CompilationDto;
-        for (Compilation compilation : compilations) {
-
-            // Используем метод getCompilationById;
-            CompilationDto compilationDto = getCompilationById(compilation.getId());
-
-            // Записываем в результирующий список;
-            result.add(compilationDto);
-        }
-
-        log.info("Получаем все подборки pinned={}, from={}, size={}", pinned, from, size);
-        return result;
+        log.info("Получаем все подборки compilations={}", compilations);
+        return compilations;
     }
 
     /*

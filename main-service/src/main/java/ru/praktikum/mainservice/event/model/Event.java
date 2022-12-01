@@ -5,15 +5,7 @@ import lombok.Setter;
 import ru.praktikum.mainservice.category.model.Category;
 import ru.praktikum.mainservice.user.model.User;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -65,11 +57,9 @@ public class Event {
     @Column(name = "created_on")
     private LocalDateTime createdOn;
 
-    @Column(name = "location_lat")
-    private Double locationLat;
-
-    @Column(name = "location_lon")
-    private Double locationLon;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
 
     @NotNull
     @Column(name = "paid", nullable = false)
@@ -77,9 +67,6 @@ public class Event {
 
     @Column(name = "participant_limit")
     private Long participantLimit;
-
-    @Column(name = "confirmed_requests")
-    private Long confirmedRequests;
 
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
