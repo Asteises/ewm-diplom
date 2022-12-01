@@ -39,11 +39,9 @@ public class RequestServiceImpl implements RequestService {
     */
     @Override
     public ParticipationRequestDto createRequest(long userId, long eventId) {
-        // Проверяем наличие события;
-        Event event = eventService.checkEventAvailableInDb(eventId);
 
-        // Проверяем опубликовано событие или нет;
-        eventService.checkStatusPublished(event.getId());
+        // Проверяем существует событие и опубликовано оно или нет;
+        Event event = eventService.checkStatusPublished(eventId);
 
         // Проверяем есть ли доступные места на событие;
         eventService.checkRequestLimitAndModeration(event);
