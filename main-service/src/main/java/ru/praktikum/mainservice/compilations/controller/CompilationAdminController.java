@@ -14,6 +14,7 @@ import ru.praktikum.mainservice.compilations.model.dto.NewCompilationDto;
 import ru.praktikum.mainservice.compilations.service.CompilationService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.PositiveOrZero;
 
 @Slf4j
 @RestController
@@ -37,7 +38,7 @@ public class CompilationAdminController {
     DELETE COMPILATION - Удаление подборки
      */
     @DeleteMapping("/{compId}")
-    public void deleteCompilation(@PathVariable long compId) {
+    public void deleteCompilation(@PathVariable @PositiveOrZero long compId) {
 
         log.info("Удаляем подборку: compId={}", compId);
         compilationService.deleteCompilation(compId);
@@ -47,8 +48,8 @@ public class CompilationAdminController {
     DELETE COMPILATION - Удаление события из подборки
      */
     @DeleteMapping("/{compId}/events/{eventId}")
-    public void deleteEventFromCompilation(@PathVariable long compId,
-                                           @PathVariable long eventId) {
+    public void deleteEventFromCompilation(@PathVariable @PositiveOrZero long compId,
+                                           @PathVariable @PositiveOrZero long eventId) {
 
         log.info("Удаляем событие eventId={} из подборки: compId={}", eventId, compId);
         compilationService.deleteEventFromCompilation(compId, eventId);
@@ -58,8 +59,8 @@ public class CompilationAdminController {
     PATCH COMPILATION - Добавить событие в подборку
     */
     @PatchMapping("/{compId}/events/{eventId}")
-    public void addEventInCompilation(@PathVariable long compId,
-                                      @PathVariable long eventId) {
+    public void addEventInCompilation(@PathVariable @PositiveOrZero long compId,
+                                      @PathVariable @PositiveOrZero long eventId) {
 
         log.info("Добавляем событие eventId={} в подборку: compId={}", eventId, compId);
         compilationService.addEventInCompilation(compId, eventId);
@@ -69,7 +70,7 @@ public class CompilationAdminController {
     DELETE COMPILATION - Открепить подборку на главной странице
     */
     @DeleteMapping("/{compId}/pin")
-    public void unpinCompilationAtHomePage(@PathVariable long compId) {
+    public void unpinCompilationAtHomePage(@PathVariable @PositiveOrZero long compId) {
 
         log.info("Открепляем подборку на главной странице: compId={}", compId);
         compilationService.unpinCompilationAtHomePage(compId);
@@ -79,7 +80,7 @@ public class CompilationAdminController {
     PATCH COMPILATION - Закрепить подборку на главной странице
     */
     @PatchMapping("/{compId}/pin")
-    public void pinCompilationAtHomePage(@PathVariable long compId) {
+    public void pinCompilationAtHomePage(@PathVariable @PositiveOrZero long compId) {
 
         log.info("Закрепляем подборку на главной странице: compId={}", compId);
         compilationService.pinCompilationAtHomePage(compId);

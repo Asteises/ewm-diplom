@@ -43,6 +43,7 @@ services:
       - "8080:8080"
     depends_on:
       - ewm-db
+      - stats-server
     environment:
       MAIN_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
       POSTGRES_USER: postgres

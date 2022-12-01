@@ -39,7 +39,7 @@ public class CompilationController {
     GET COMPILATION - Получение подборки по id
     */
     @GetMapping("/{compId}")
-    public CompilationDto getCompilationById(@PathVariable long compId) {
+    public CompilationDto getCompilationById(@PathVariable @PositiveOrZero long compId) {
 
         log.info("Получаем подборку compId={}", compId);
         return compilationService.getCompilationById(compId);

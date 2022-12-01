@@ -4,13 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 import ru.praktikum.mainservice.event.model.Location;
 
 /**
  * Информация для редактирования события администратором. Все поля необязательные. Значение полей не валидируется.
  */
-@Validated
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
