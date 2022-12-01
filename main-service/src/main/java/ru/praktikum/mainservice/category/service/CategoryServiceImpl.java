@@ -47,7 +47,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     /*
-    PATCH CATEGORIES - Добавление новой категорий
+    PATCH CATEGORIES - Изменение категории
         Обратите внимание:
             + имя категории должно быть уникальным;
     */
@@ -61,7 +61,6 @@ public class CategoryServiceImpl implements CategoryService {
         checkNameCategory(categoryDto.getName());
 
         // Сетим данные и обновляем БД;
-        category.setId(categoryDto.getId());
         category.setName(categoryDto.getName());
         categoryStorage.save(category);
 
@@ -96,7 +95,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryDto> getAllCategories(Integer from, Integer size) {
 
         // Записываем найденные в БД категории;
-        List<Category> categories = categoryStorage.findAll(PageRequest.of(from / size, size)).stream().collect(Collectors.toList());
+        List<Category> categories = categoryStorage.findAll(PageRequest.of(from / size, size)).toList();
 
         log.info("Получаем все категории с параметрами: from={}, size={}", from, size);
         return categories.stream().map(CategoryMapper::categoryToCategoryDto).collect(Collectors.toList());
