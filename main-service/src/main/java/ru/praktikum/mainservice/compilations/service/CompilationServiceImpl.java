@@ -6,10 +6,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.compilations.mapper.CompilationMapper;
 import ru.praktikum.mainservice.compilations.model.Compilation;
-import ru.praktikum.mainservice.compilations.model.CompilationEvent;
 import ru.praktikum.mainservice.compilations.model.dto.CompilationDto;
 import ru.praktikum.mainservice.compilations.model.dto.NewCompilationDto;
-import ru.praktikum.mainservice.compilations.repository.CompilationEventStorage;
 import ru.praktikum.mainservice.compilations.repository.CompilationStorage;
 import ru.praktikum.mainservice.event.mapper.EventMapper;
 import ru.praktikum.mainservice.event.model.Event;
@@ -28,8 +26,6 @@ import java.util.stream.Collectors;
 public class CompilationServiceImpl implements CompilationService {
 
     private final CompilationStorage compilationStorage;
-
-    private final CompilationEventStorage compilationEventStorage;
 
     private final EventService eventService;
 
@@ -81,22 +77,8 @@ public class CompilationServiceImpl implements CompilationService {
         // Проверяем существует подборка или нет;
         Compilation compilation = checkCompilationAvailableInBd(compId);
 
-        // Находим все CompilationEvent связанные с этой подборкой;
-        List<CompilationEvent> compilationEvents = compilationEventStorage.findAllByComp(compilation);
-
-        // Находим все события, связанные с этой подборкой;
-        List<Event> events = new ArrayList<>();
-        for (CompilationEvent compilationEvent : compilationEvents) {
-            events.add(compilationEvent.getEvent());
-        }
-
         // Мапим CompilationDto;
         CompilationDto result = CompilationMapper.fromCompToCompDto(compilation);
-
-        // Сетим подборки;
-        result.setEvents(events.stream()
-                .map(EventMapper::fromEventToEventShortDto)
-                .collect(Collectors.toList()));
 
         log.info("Получаем подборку compId={}", compId);
         return result;
@@ -110,31 +92,16 @@ public class CompilationServiceImpl implements CompilationService {
 
         // Создаем новую категорию и сохраняем в БД;
         Compilation compilation = CompilationMapper.fromNewCompToCom(newCompilationDto);
+
+        // Собираем все подборки по id которые пришли в newCompilationDto;
+        List<Event> events = eventService.getEventsByIds(newCompilationDto.getEvents());
+
+        // Сетим подборки в Compilation и сохраняем в БД;
+        compilation.setEvents(events);
         compilationStorage.save(compilation);
 
         // Мапим результирующий объект;
         CompilationDto result = CompilationMapper.fromCompToCompDto(compilation);
-
-        // Находим все события по пришедшим id;
-        List<Event> events = eventService.getEventsByIds(newCompilationDto.getEvents());
-
-        // Сохраняем подборки вместе с событиями в CompilationEvent;
-        for (Event event : events) {
-
-            // Проверяем каждое событие на существование;
-            event = eventService.checkEventAvailableInDb(event.getId());
-
-            // Создаем CompilationEvent, мапим и сохраняем в БД;
-            CompilationEvent compilationEvent = CompilationMapper.toCompilationEvent(compilation, event);
-            compilationEventStorage.save(compilationEvent);
-        }
-
-        // Мапим события в лист EventShortDto;
-        List<EventShortDto> eventShortDtos = events.stream()
-                .map(EventMapper::fromEventToEventShortDto).collect(Collectors.toList());
-
-        // Сетим события в результат;
-        result.setEvents(eventShortDtos);
 
         log.info("Подборка успешно создана result={}", result);
         return result;
@@ -149,12 +116,6 @@ public class CompilationServiceImpl implements CompilationService {
         // Проверяем существование подборки;
         Compilation compilation = checkCompilationAvailableInBd(compId);
 
-        // Собираем все события участвующие в подборке;
-        List<CompilationEvent> compilationsEvents = compilationEventStorage.findAllByComp(compilation);
-
-        // Удаляем все события из подборки;
-        compilationEventStorage.deleteAll(compilationsEvents);
-
         // Удаляем подборку;
         log.info("Удаляем подборку compId={}", compId);
         compilationStorage.delete(compilation);
@@ -167,19 +128,21 @@ public class CompilationServiceImpl implements CompilationService {
     public void deleteEventFromCompilation(long compId, long eventId) {
 
         // Проверяем существование подборки;
-        checkCompilationAvailableInBd(compId);
+        Compilation compilation = checkCompilationAvailableInBd(compId);
 
         // Проверяем существование события;
-        eventService.checkEventAvailableInDb(eventId);
+        Event event = eventService.checkEventAvailableInDb(eventId);
 
         // Проверяем есть ли в подборке это событие;
-        CompilationEvent compilationEvent = compilationEventStorage
-                .findByEvent_IdAndAndComp_Id(eventId, compId)
-                .orElseThrow(() -> new BadRequestException("CompilationEvent не найден"));
+        if (!compilation.getEvents().contains(event)) {
+            throw new BadRequestException(String.format("Данного события eventId=%s нет в подборке compId=%s", eventId, compId));
+        }
 
-        // И удаляем его из БД;
+        // Удаляем событие из подборки и сохраняем обновленные данные в БД;
+        compilation.getEvents().remove(event);
+        compilationStorage.save(compilation);
+
         log.info("Удаляем событие eventId={} из подборки compId={}", eventId, compId);
-        compilationEventStorage.delete(compilationEvent);
     }
 
     /*
@@ -194,16 +157,12 @@ public class CompilationServiceImpl implements CompilationService {
         // Проверяем существование события;
         Event event = eventService.checkEventAvailableInDb(eventId);
 
-        // Создаем новый CompilationEvent, чтобы сохранить связь события и подборки;
-        CompilationEvent compilationEvent = new CompilationEvent();
-
-        // Сетим данные;
-        compilationEvent.setComp(compilation);
-        compilationEvent.setEvent(event);
+        // Добавляем событие в подборку;
+        compilation.getEvents().add(event);
 
         // Сохраняем в БД;
-        log.info("Добавляем событие eventId={} в подборку compId={}: compilationEvent={}", eventId, compId, compilationEvent);
-        compilationEventStorage.save(compilationEvent);
+        log.info("Добавляем событие eventId={} в подборку compId={}", eventId, compId);
+        compilationStorage.save(compilation);
     }
 
     /*
