@@ -1,4 +1,4 @@
-package ru.praktikum.mainservice.event.model;
+package ru.praktikum.mainservice.location;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -21,7 +21,7 @@ public class Location {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "id")
     private Long id;
 
     @JsonProperty("lat")

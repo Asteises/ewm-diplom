@@ -3,6 +3,7 @@ package ru.praktikum.mainservice.event.model;
 import lombok.Getter;
 import lombok.Setter;
 import ru.praktikum.mainservice.category.model.Category;
+import ru.praktikum.mainservice.location.Location;
 import ru.praktikum.mainservice.user.model.User;
 
 import javax.persistence.*;

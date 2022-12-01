@@ -18,6 +18,8 @@ import ru.praktikum.mainservice.event.model.dto.NewEventDto;
 import ru.praktikum.mainservice.event.repository.EventStorage;
 import ru.praktikum.mainservice.exception.BadRequestException;
 import ru.praktikum.mainservice.exception.NotFoundException;
+import ru.praktikum.mainservice.location.Location;
+import ru.praktikum.mainservice.location.LocationService;
 import ru.praktikum.mainservice.request.mapper.RequestMapper;
 import ru.praktikum.mainservice.request.model.Request;
 import ru.praktikum.mainservice.request.model.dto.ParticipationRequestDto;
@@ -40,6 +42,7 @@ public class EventServiceImpl implements EventService {
     private final EventStorage eventStorage;
     private final UserService userService;
     private final CategoryService categoryService;
+    private final LocationService locationService;
     private final RequestStorage requestStorage;
     private final StatClient statClient;
 
@@ -57,6 +60,10 @@ public class EventServiceImpl implements EventService {
         // Валидируем время события;
         checkEventCreateDate(eventDate);
 
+        // Создаем новую локацию и сохраняем ее в БД, чтобы получить id;
+        Location newLocation = newEventDto.getLocation();
+        newLocation = locationService.createLocation(newLocation);
+
         /*
         Из контроллера приходит только id пользователя,
         а положить в Event нужно всего пользователя, дополнительно проверяем наличие пользователя в БД;
@@ -69,10 +76,11 @@ public class EventServiceImpl implements EventService {
         */
         Category category = categoryService.checkCategory(newEventDto.getCategory());
 
-        // Мапим событие и сетим пользователя, категорию и статус;
+        // Мапим событие и сетим пользователя, категорию, локацию и статус;
         Event event = EventMapper.toEvent(newEventDto);
         event.setInitiator(initiator);
         event.setCategory(category);
+        event.setLocation(newLocation);
         event.setState(StateEnum.PENDING.toString());
 
         // Обновляем Event, так как после сохранения в БД у него появился id;

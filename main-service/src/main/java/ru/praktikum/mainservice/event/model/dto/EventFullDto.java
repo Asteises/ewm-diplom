@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.praktikum.mainservice.category.model.dto.CategoryDto;
 import ru.praktikum.mainservice.event.enums.StateEnum;
-import ru.praktikum.mainservice.event.model.Location;
+import ru.praktikum.mainservice.location.Location;
 import ru.praktikum.mainservice.user.model.dto.UserShortDto;
 
 /**

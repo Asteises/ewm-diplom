@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.praktikum.mainservice.event.model.Location;
+import ru.praktikum.mainservice.location.Location;
 
 /**
  * Новое событие
