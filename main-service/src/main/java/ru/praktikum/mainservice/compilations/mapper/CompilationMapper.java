@@ -24,7 +24,7 @@ public class CompilationMapper {
         compDto.setId(compilation.getId());
         compDto.setPinned(compilation.getPinned());
         compDto.setTitle(compilation.getTitle());
-        for (Event event: compilation.getEvents()) {
+        for (Event event : compilation.getEvents()) {
             events.add(EventMapper.fromEventToEventShortDto(event));
         }
         compDto.setEvents(events);
