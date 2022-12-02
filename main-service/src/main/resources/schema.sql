@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS events
     CONSTRAINT events_pk PRIMARY KEY (id),
     CONSTRAINT events_category_id_fk FOREIGN KEY (category_id) REFERENCES categories (id),
     CONSTRAINT events_users_id_fk FOREIGN KEY (initiator_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT events_location_id_fk FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE
+    CONSTRAINT events_locations_id_fk FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS locations
