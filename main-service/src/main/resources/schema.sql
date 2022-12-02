@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS categories, requests, compilation_events, event_states, events, users, compilations;
+DROP TABLE IF EXISTS categories, requests, compilation_events, event_states, events, users, compilations, locations;
 
 CREATE TABLE IF NOT EXISTS categories
 (
@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS events
     request_moderation BOOLEAN DEFAULT TRUE,
     CONSTRAINT events_pk PRIMARY KEY (id),
     CONSTRAINT events_category_id_fk FOREIGN KEY (category_id) REFERENCES categories (id),
-    CONSTRAINT events_users_id_fk FOREIGN KEY (initiator_id) REFERENCES users (id) ON DELETE CASCADE
+    CONSTRAINT events_users_id_fk FOREIGN KEY (initiator_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT requests_location_id_fk FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS locations
