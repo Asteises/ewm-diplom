@@ -21,9 +21,10 @@ import java.util.Map;
 public class StatClient extends BaseClient {
 
     private final String getStatUrl = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
+    private final String docker = "${ewm_stats_service_url}";
 
     @Autowired
-    public StatClient(@Value("${ewm_stats_service_url}") String url, RestTemplateBuilder builder) {
+    public StatClient(@Value("http://localhost:9090") String url, RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(url))
