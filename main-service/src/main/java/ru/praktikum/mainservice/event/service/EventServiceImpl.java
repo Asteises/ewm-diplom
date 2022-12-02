@@ -350,19 +350,16 @@ public class EventServiceImpl implements EventService {
                         end,
                         PageRequest.of(from / size, size))
                 .stream().collect(Collectors.toList());
+        log.info("Найденные события events={}", events);
 
         // Проверяем, что данные были найдены;
         if (events.isEmpty()) {
             throw new BadRequestException("По заданным параметрам события не найдены!");
         }
 
-        // Создаем результирующий объект;
-        List<EventShortDto> result;
-
         // Получаем просмотры и запросы на события;
-        result = events.stream()
+        List<EventShortDto> result = events.stream()
                 .map(EventMapper::fromEventToEventShortDto)
-                .map(this::setViewsAndConfReqToEventShortDto)
                 .collect(Collectors.toList());
 
         log.info("Выводим все публичные события : result={}", result);
@@ -638,10 +635,19 @@ public class EventServiceImpl implements EventService {
 
         if (response != null) {
             // Создаем объект из ответа;
-            ArrayList<LinkedHashMap<Object, Object>> listFromObjec = (ArrayList<LinkedHashMap<Object, Object>>) response.getBody();
+            ArrayList<LinkedHashMap<Object, Object>> listFromObject = (ArrayList<LinkedHashMap<Object, Object>>) response.getBody();
+            if(listFromObject != null) {
+
+                for(LinkedHashMap<Object, Object> linkedHashMap: listFromObject) {
+                    System.out.println(linkedHashMap.values());
+                }
+            }
+
+            log.info("listFromObject.get(0)={}", listFromObject.get(0));
+            log.info("listFromObject.get(1)={}", listFromObject.get(1));
 
             // Достаем количество просмотров;
-            Integer views = (Integer) listFromObjec.get(0).get("hits");
+            Integer views = (Integer) listFromObject.get(0).get("hits");
             log.info("Получаем просмотры события eventId={}: views={}", eventId, views);
             return views;
 
