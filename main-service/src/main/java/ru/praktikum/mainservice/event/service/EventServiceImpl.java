@@ -14,7 +14,6 @@ import ru.praktikum.mainservice.event.model.Event;
 import ru.praktikum.mainservice.event.model.dto.AdminUpdateEventRequest;
 import ru.praktikum.mainservice.event.model.dto.EventFullDto;
 import ru.praktikum.mainservice.event.model.dto.EventShortDto;
-import ru.praktikum.mainservice.event.model.dto.IdViewsPair;
 import ru.praktikum.mainservice.event.model.dto.NewEventDto;
 import ru.praktikum.mainservice.event.repository.EventStorage;
 import ru.praktikum.mainservice.exception.BadRequestException;
@@ -31,8 +30,12 @@ import ru.praktikum.mainservice.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -358,25 +361,44 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("По заданным параметрам события не найдены!");
         }
 
-        List<IdViewsPair> idViewsPairs = getViewsByEventsId(events.stream()
-                .map(Event::getId)
-                .collect(Collectors.toList()));
+        // Собираем id всех событий;
+        List<Long> eventsIds = getCurrentEventIds(events);
 
-        // Получаем просмотры и запросы на события;
+        // Находим пары id события - просмотры;
+        Map<Long, Integer> idViewsPairs = getViewsByEventsId(eventsIds);
+        log.info("Найденные idViewsPairs={}", idViewsPairs);
+
+        // Находим пары id события - подтвержденные запросы;
+        Map<Long, Long> idConfReqPairs = getAllConfirmedRequests(eventsIds);
+        log.info("Найденные idConfReqPairs={}", idConfReqPairs);
+
+        // Создаем результирующий объект и мапим в нужную форму;
         List<EventShortDto> result = events.stream()
                 .map(EventMapper::fromEventToEventShortDto)
                 .collect(Collectors.toList());
 
+        // Сетим просмотры и подтвержденные запросы каждому событию;
         for (EventShortDto eventShortDto : result) {
-            for (IdViewsPair idViewsPair : idViewsPairs) {
-                if (eventShortDto.getId().equals(idViewsPair.getId())) {
-                    eventShortDto.setViews(idViewsPair.getViews());
-                }
+            if (idViewsPairs.containsKey(eventShortDto.getId())) {
+                eventShortDto.setViews(idViewsPairs.get(eventShortDto.getId()));
+                eventShortDto.setConfirmedRequests(idConfReqPairs.get(eventShortDto.getId()));
             }
         }
 
         log.info("Выводим все публичные события : result={}", result);
-        return result;
+
+        // Результат выводим согласно пришедшему параметру сортировки, по-умолчанию: По дате события;
+        if (sort.equals("VIEWS")) {
+
+            return result.stream()
+                    .sorted((Comparator.comparing(EventShortDto::getViews)))
+                    .collect(Collectors.toList());
+        } else {
+
+            log.info("Выводим все публичные события : result={}", result);
+            return result.stream().sorted((Comparator.comparing(EventShortDto::getEventDate)))
+                    .collect(Collectors.toList());
+        }
     }
 
     /*
@@ -401,11 +423,18 @@ public class EventServiceImpl implements EventService {
         result.setConfirmedRequests(getConfirmedRequests(eventId));
 
         // Находим просмотры события;
-        List<IdViewsPair> idViewsPairs = getViewsByEventsId(List.of(eventId));
-        Integer views = idViewsPairs.get(0).getViews();
+        Map<Long, Integer> idViewsPairs = getViewsByEventsId(List.of(eventId));
+        log.info("Найденные idViewsPairs={}", idViewsPairs);
+        Integer views = idViewsPairs.get(eventId);
 
-        // Сетим просмотры;
+        // Находим пары id события - подтвержденные запросы;
+        Map<Long, Long> idConfReqPairs = getAllConfirmedRequests(List.of(eventId));
+        log.info("Найденные idConfReqPairs={}", idConfReqPairs);
+        Long confirmedRequests = idConfReqPairs.get(eventId);
+
+        // Сетим просмотры и подтвержденные запросы;
         result.setViews(views);
+        result.setConfirmedRequests(confirmedRequests);
 
         log.info("Выводим публичное событие: result={}", result);
         return result;
@@ -437,21 +466,27 @@ public class EventServiceImpl implements EventService {
 
         log.info("Найденные события: events={}", events);
 
-        List<IdViewsPair> idViewsPairs = getViewsByEventsId(events.stream()
-                .map(Event::getId)
-                .collect(Collectors.toList()));
+        // Собираем id всех событий;
+        List<Long> eventsIds = getCurrentEventIds(events);
+
+        // Находим пары id события - просмотры;
+        Map<Long, Integer> idViewsPairs = getViewsByEventsId(eventsIds);
         log.info("Найденные idViewsPairs={}", idViewsPairs);
 
-        // Получаем просмотры и запросы на события;
+        // Находим пары id события - подтвержденные запросы;
+        Map<Long, Long> idConfReqPairs = getAllConfirmedRequests(eventsIds);
+        log.info("Найденные idConfReqPairs={}", idConfReqPairs);
+
+        // Создаем результирующий объект и мапим в нужную форму;
         List<EventFullDto> result = events.stream()
                 .map(EventMapper::fromEventToEventFullDto)
                 .collect(Collectors.toList());
 
+        // Сетим просмотры и подтвержденные запросы каждому событию;
         for (EventFullDto eventFullDto : result) {
-            for (IdViewsPair idViewsPair : idViewsPairs) {
-                if (eventFullDto.getId().equals(idViewsPair.getId())) {
-                    eventFullDto.setViews(idViewsPair.getViews());
-                }
+            if (idViewsPairs.containsKey(eventFullDto.getId())) {
+                eventFullDto.setViews(idViewsPairs.get(eventFullDto.getId()));
+                eventFullDto.setConfirmedRequests(idConfReqPairs.get(eventFullDto.getId()));
             }
         }
 
@@ -623,16 +658,33 @@ public class EventServiceImpl implements EventService {
     private Long getConfirmedRequests(long eventId) {
 
         // Собираем все подтвержденные запросы на событие;
-        List<Request> confirmedRequests = requestStorage.findAllByEvent_IdAndStatus(eventId, "CONFIRMED");
+        Long confirmedRequests = requestStorage.countByEvent_IdAndStatus(eventId, "CONFIRMED");
 
-        log.info("Подтвержденных запросов у события eventId={}: confirmedRequests={}", eventId, confirmedRequests.size());
-        return (long) confirmedRequests.size();
+        log.info("Подтвержденных запросов у события eventId={}: confirmedRequests={}", eventId, confirmedRequests);
+        return confirmedRequests;
+    }
+
+    private Map<Long, Long> getAllConfirmedRequests(List<Long> eventsIds) {
+
+        List<Request> requests = requestStorage.findAllByEvent_IdInAndStatus(eventsIds, "CONFIRMED");
+        log.info("Нашли все подтвержденные запросы на события eventsIds={}: requests={}", eventsIds, requests);
+
+        Map<Long, Long> result = new HashMap<>();
+
+        for (Long id : eventsIds) {
+            result.put(id, requests.stream()
+                    .filter(request -> Objects.equals(request.getEvent().getId(), id))
+                    .count());
+        }
+
+        log.info("Разложили все подтвержденые запросы по событиям: result={}", result);
+        return result;
     }
 
     /*
     Метод передает запрос в сервис статистики и возвращает количество просмотров события;
      */
-    private List<IdViewsPair> getViewsByEventsId(List<Long> eventsIds) {
+    private Map<Long, Integer> getViewsByEventsId(List<Long> eventsIds) {
 
         // Нужны переменные времени для передачи в сервис статистики;
         LocalDateTime start = LocalDateTime.of(2021, 12, 31, 23, 59, 59);
@@ -645,7 +697,7 @@ public class EventServiceImpl implements EventService {
             uris.add("/events/" + eventId);
         }
 
-        List<IdViewsPair> result = new ArrayList<>();
+        Map<Long, Integer> result = new HashMap<>();
 
         // Записываем то, что пришло в ответе по отправленным параметрам;
         ResponseEntity<Object> response = statClient.getStats(start, end, uris, false);
@@ -657,18 +709,26 @@ public class EventServiceImpl implements EventService {
             if (listFromObject != null) {
 
                 for (LinkedHashMap<Object, Object> linkedHashMap : listFromObject) {
-                    IdViewsPair idViewsPair = new IdViewsPair();
+
                     String id = String.valueOf(linkedHashMap.get("uri")).substring(8, String.valueOf(linkedHashMap.get("uri")).length());
-                    idViewsPair.setId(Long.parseLong(id));
-                    idViewsPair.setViews((Integer) linkedHashMap.get("views"));
-                    result.add(idViewsPair);
-                    log.info("Записали новый idViewsPair={}", idViewsPair);
+                    result.put(Long.parseLong(id), (Integer) linkedHashMap.get("views"));
+                    log.info("Записали новую пару: {}", result.get(Long.parseLong(id)));
                 }
             }
         }
 
         log.info("Получаем просмотры события result={}", result);
         return result;
+    }
+
+    /*
+    Метод принимает список событий и возвращает список их id;
+     */
+    private List<Long> getCurrentEventIds(List<Event> events) {
+
+        return events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
     }
 
     /*
@@ -695,7 +755,7 @@ public class EventServiceImpl implements EventService {
             return true;
         }
         // Находим количество всех одобренных заявок;
-        long currentLimit = requestStorage.findAllByEvent_IdAndStatus(event.getId(), "CONFIRMED").size();
+        Long currentLimit = requestStorage.countByEvent_IdAndStatus(event.getId(), "CONFIRMED");
 
         // Если осталось последнее место;
         if (totalLimit == currentLimit + 1) {
