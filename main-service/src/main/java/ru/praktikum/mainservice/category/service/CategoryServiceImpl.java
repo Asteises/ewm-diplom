@@ -57,6 +57,10 @@ public class CategoryServiceImpl implements CategoryService {
         // Проверяем наличие категории;
         Category category = checkCategory(categoryDto.getId());
 
+        if (category.getName().equals(categoryDto.getName())) {
+            throw new BadRequestException("Оказалось, что менять то и нечего");
+        }
+
         // Проверяем уникальность имени категории;
         checkNameCategory(categoryDto.getName());
 

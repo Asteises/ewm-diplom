@@ -55,17 +55,29 @@ public class StatServiceImpl implements StatService {
         // Создаем результирующий объект;
         List<ViewStatsDto> result = new ArrayList<>();
 
-        // Если список uris пришел пустой, то запишем в него все uri которые есть в БД ля данного приложения в диапазоне времени;
+        // Промежуточный лист EndpointHit для простоты восприятия;
+        List<EndpointHit> endpointHits = new ArrayList<>();
+
+        // Если список uris пришел пустой, то запишем в него все что есть в БД для данного приложения в диапазоне времени;
         if (uris == null) {
-            uris = statStorage.findAllByCreatedBetween(currentStart, currentEnd)
-                    .stream()
-                    .map(EndpointHit::getUri)
-                    .distinct()
-                    .collect(Collectors.toList());
+            endpointHits = statStorage.findAllByCreatedBetween(currentStart, currentEnd);
+
+            // Так как передавать пустой список uri нельзя, сетим в него все uri которые нашли;
+            uris = endpointHits.stream().map(EndpointHit::getUri).collect(Collectors.toList());
+
+        } else {
+            // Если список uri пришел не пустой, то находим по нему;
+            endpointHits = statStorage.findAllByUriInAndCreatedBetween(uris, currentStart, currentEnd);
         }
 
-        // Промежуточный лист EndpointHit для простоты восприятия;
-        List<EndpointHit> endpointHits;
+        // Если нужны данные с уникальными ip, то сначала обновим лист endpointHits;
+        if (unique) {
+
+            // Воспользуемся StreamEx, чтобы оставить в списке только уникальные значения;
+            endpointHits = StreamEx.of(endpointHits)
+                    .distinct(EndpointHit::getIp)
+                    .collect(Collectors.toList());
+        }
 
         // Проходимся по списку uris, чтобы посчитать просмотры для каждого;
         for (String uri : uris) {
@@ -73,26 +85,16 @@ public class StatServiceImpl implements StatService {
             // Создаем ViewStatsDto в который будем записывать данные;
             ViewStatsDto viewStatsDto = new ViewStatsDto();
 
-            // Сетим uri;
+            // Сетим app и uri;
+            viewStatsDto.setApp("main-service");
             viewStatsDto.setUri(uri);
 
-            // Находим все EndpointHit по заданным параметрам;
-            endpointHits = statStorage.findByUri(uri);
-            log.info("Ищем все EndpointHit по uri={}", uri);
-            log.info("endpointHits={}", endpointHits);
-
-            // Если нужны данные с уникальными ip, то сначала обновим лист endpointHits;
-            if (unique) {
-
-                // Воспользуемся StreamEx, чтобы оставить в списке только уникальные значения;
-                endpointHits = StreamEx.of(endpointHits)
-                        .distinct(EndpointHit::getIp)
-                        .collect(Collectors.toList());
-            }
-
-            // Сетим количество просмотров и app;
-            viewStatsDto.setHits(endpointHits.size());
-            viewStatsDto.setApp("main-service");
+            // Находим количество просмотров по каждому uri и сетим;
+            Integer views = Math.toIntExact(endpointHits.stream()
+                    .filter(endpointHit -> endpointHit.getUri().equals(uri))
+                    .count());
+            viewStatsDto.setHits(views);
+            log.info("Количество просмотров для uri={}: views={}", uri, views);
 
             // Добавляем в результат;
             result.add(viewStatsDto);

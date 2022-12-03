@@ -25,7 +25,7 @@ public class StatClient extends BaseClient {
     private final String localhost = "http://localhost:9090";
 
     @Autowired
-    public StatClient(@Value(localhost) String url, RestTemplateBuilder builder) {
+    public StatClient(@Value(docker) String url, RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(url))
