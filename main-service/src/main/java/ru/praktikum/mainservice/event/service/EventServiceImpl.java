@@ -671,11 +671,14 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> result = new HashMap<>();
 
-        for (Long id : eventsIds) {
-            result.put(id, requests.stream()
-                    .filter(request -> Objects.equals(request.getEvent().getId(), id))
-                    .count());
-        }
+        result = requests.stream()
+                .collect(Collectors.groupingBy(request -> request.getEvent().getId(), Collectors.counting()));
+
+//        for (Long id : eventsIds) {
+//            result.put(id, requests.stream()
+//                    .filter(request -> Objects.equals(request.getEvent().getId(), id))
+//                    .count());
+//        }
 
         log.info("Разложили все подтвержденые запросы по событиям: result={}", result);
         return result;
