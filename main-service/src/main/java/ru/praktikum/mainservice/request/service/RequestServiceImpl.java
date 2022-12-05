@@ -135,4 +135,11 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
+    @Override
+    public void checkRequesterHasConfirmedRequest(long eventId, long requesterId) {
+
+        requestStorage.findRequestByEvent_IdAndRequester_IdAndStatus(eventId, requesterId, "CONFIRMED")
+                .orElseThrow(() -> new BadRequestException(String.format("Пользователь requesterId=%s не имеет подтвержденного запроса в данном событии eventId=%s", requesterId, eventId)));
+    }
+
 }

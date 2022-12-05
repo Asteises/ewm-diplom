@@ -2,14 +2,10 @@ package ru.praktikum.mainservice.event.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.praktikum.mainservice.comment.model.dto.CommentDto;
+import ru.praktikum.mainservice.comment.model.dto.NewCommentDto;
+import ru.praktikum.mainservice.comment.model.service.CommentService;
 import ru.praktikum.mainservice.event.model.dto.EventFullDto;
 import ru.praktikum.mainservice.event.model.dto.NewEventDto;
 import ru.praktikum.mainservice.event.service.EventService;
@@ -28,6 +24,7 @@ import java.util.List;
 public class EventPrivateController {
 
     private final EventService eventService;
+    private final CommentService commentService;
 
     /*
     POST EVENT - Добавление нового события:
@@ -132,5 +129,49 @@ public class EventPrivateController {
         log.info("Пользователь userId={} одобряет чужой запрос reqId={} на участие свое событие eventId={}",
                 userId, reqId, eventId);
         return eventService.cancelRequestOnEventByCurrentUser(userId, eventId, reqId);
+    }
+
+    /*
+    POST COMMENT - Пользователь оставляет комментарий на событие.
+     */
+    @PostMapping("/{userId}/events/{eventId}/comment")
+    public CommentDto postComment(@RequestBody @Valid NewCommentDto newCommentDto,
+                                  @PathVariable long userId,
+                                  @PathVariable long eventId) {
+
+        log.info("Пользователь userId={} оставляет комментарий newCommentDto={} на событие eventId={}",
+                userId, newCommentDto, eventId);
+        return commentService.postComment(newCommentDto, userId, eventId);
+    }
+
+    /*
+    PUT COMMENT - Пользователь вносит изменение в комментарий на событие.
+        + комментарий должен принадлежать пользователю;
+        + комментарий должен принадлежать событию;
+    */
+    @PutMapping("/{userId}/events/{eventId}/comment/{commentId}")
+    public CommentDto editComment(@RequestBody @Valid NewCommentDto newCommentDto,
+                                  @PathVariable long userId,
+                                  @PathVariable long eventId,
+                                  @PathVariable long commentId) {
+
+        log.info("Пользователь userId={} исправляет комментарий commentId={} на событие eventId={}: newCommentDto={}",
+                userId, commentId, eventId, newCommentDto);
+        return commentService.editComment(newCommentDto, userId, eventId, commentId);
+    }
+
+    /*
+    DELETE COMMENT - Пользователь удаляет свой комментарий на событие.
+        + комментарий должен принадлежать пользователю;
+        + комментарий должен принадлежать событию;
+    */
+    @DeleteMapping("/{userId}/events/{eventId}/comment/{commentId}")
+    public void deleteComment(@PathVariable long userId,
+                              @PathVariable long eventId,
+                              @PathVariable long commentId) {
+
+        log.info("Пользователь userId={} удаляет комментарий commentId={} на событие eventId={}",
+                userId, commentId, eventId);
+        commentService.deleteComment(userId, eventId, commentId);
     }
 }

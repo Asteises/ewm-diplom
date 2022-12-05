@@ -9,6 +9,7 @@ import ru.praktikum.mainservice.event.model.dto.EventShortDto;
 import ru.praktikum.mainservice.event.model.dto.NewEventDto;
 import ru.praktikum.mainservice.request.model.dto.ParticipationRequestDto;
 import ru.praktikum.mainservice.request.model.dto.UpdateEventRequest;
+import ru.praktikum.mainservice.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,4 +65,6 @@ public interface EventService {
     EventFullDto eventRejectByAdmin(long eventId);
 
     Event checkStatusPublished(long eventId);
+
+    void checkOwnEvent(Event event, User user);
 }
