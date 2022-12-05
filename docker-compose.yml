@@ -1,15 +1,69 @@
 version: '3.1'
+
 services:
+
   stats-server:
+    build:
+      dockerfile: Dockerfile
+      context: ./stats-service
+    image: ewm-stats-service-image
+    container_name: ewm_stats_service_container
     ports:
       - "9090:9090"
+    depends_on:
+      - stats-db
+    environment:
+      STATS_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/ewm-stat
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - ewm-net
 
   stats-db:
     image: postgres:14-alpine
+    container_name: ewm_stats_db_container
+    ports:
+      - "6541:5432"
+    volumes:
+      - /var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ewm-stat
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - ewm-net
 
   ewm-service:
+    build:
+      dockerfile: Dockerfile
+      context: ./main-service
+    image: ewm-main-service-image
+    container_name: ewm_main_service_container
     ports:
       - "8080:8080"
+    depends_on:
+      - ewm-db
+      - stats-server
+    environment:
+      MAIN_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      EWM_STATS_SERVICE_URL: http://stats-server:9090
+    networks:
+      - ewm-net
 
   ewm-db:
     image: postgres:14-alpine
+    container_name: ewm_main_db_container
+    volumes:
+      - /var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ewm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - ewm-net
+
+networks:
+  ewm-net:
+    driver: bridge
