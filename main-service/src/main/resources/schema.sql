@@ -69,8 +69,7 @@ CREATE TABLE IF NOT EXISTS comments
     created   TIMESTAMP WITH TIME ZONE,
     CONSTRAINT comments_id PRIMARY KEY (id),
     CONSTRAINT comments_event_id_fk FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
-    CONSTRAINT comments_author_id_fk FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE,
-    UNIQUE (event_id, author_id)
+    CONSTRAINT comments_author_id_fk FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS compilations
