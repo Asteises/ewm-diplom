@@ -16,4 +16,6 @@ public interface RequestService {
     List<ParticipationRequestDto> getRequests(long userId);
 
     Request checkRequestAvailableInDb(long requestId);
+
+    void checkRequesterHasConfirmedRequest(long eventId, long requesterId);
 }

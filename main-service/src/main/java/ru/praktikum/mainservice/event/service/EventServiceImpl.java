@@ -585,7 +585,8 @@ public class EventServiceImpl implements EventService {
     /*
     Метод для проверки инициатора события, что событие принадлежит именно этому пользователю;
      */
-    private void checkOwnEvent(Event event, User user) {
+    @Override
+    public void checkOwnEvent(Event event, User user) {
 
         if (!event.getInitiator().equals(user)) {
             throw new BadRequestException(String
@@ -663,7 +664,7 @@ public class EventServiceImpl implements EventService {
         List<Request> requests = requestStorage.findAllByEvent_IdInAndStatus(eventsIds, "CONFIRMED");
         log.info("Нашли все подтвержденные запросы на события eventsIds={}: requests={}", eventsIds, requests);
 
-        Map<Long, Long> result = new HashMap<>();
+        Map<Long, Long> result;
 
         result = requests.stream()
                 .collect(Collectors.groupingBy(request -> request.getEvent().getId(), Collectors.counting()));
@@ -707,7 +708,7 @@ public class EventServiceImpl implements EventService {
 
                 for (LinkedHashMap<Object, Object> linkedHashMap : listFromObject) {
 
-                    String id = String.valueOf(linkedHashMap.get("uri")).substring(8, String.valueOf(linkedHashMap.get("uri")).length());
+                    String id = String.valueOf(linkedHashMap.get("uri")).substring(8);
                     result.put(Long.parseLong(id), (Integer) linkedHashMap.get("views"));
                     log.info("Записали новую пару: {}", result.get(Long.parseLong(id)));
                 }

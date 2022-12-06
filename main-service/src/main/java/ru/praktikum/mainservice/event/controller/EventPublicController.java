@@ -3,12 +3,10 @@ package ru.praktikum.mainservice.event.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.praktikum.mainservice.client.StatClient;
+import ru.praktikum.mainservice.comment.model.dto.CommentDto;
+import ru.praktikum.mainservice.comment.service.CommentService;
 import ru.praktikum.mainservice.event.model.dto.EventFullDto;
 import ru.praktikum.mainservice.event.model.dto.EventShortDto;
 import ru.praktikum.mainservice.event.service.EventService;
@@ -28,10 +26,11 @@ import java.util.Map;
 public class EventPublicController {
 
     private final EventService eventService;
+    private final CommentService commentService;
     private final StatClient statClient;
+
     private final EventFilterValidDates eventFilterValidDates;
 
-    // TODO
     /*
     GET EVENTS - Получение событий с возможностью фильтрации
         Обратите внимание:
@@ -82,9 +81,9 @@ public class EventPublicController {
     /*
     Получение подробной информации об опубликованном событии по его идентификатору
         Обратите внимание:
-            событие должно быть опубликовано;
-            информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов;
-            информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+            + событие должно быть опубликовано;
+            + информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов;
+            + информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
      */
     @GetMapping("/{id}")
     public EventFullDto getPublicEventById(@PathVariable long id,
@@ -99,5 +98,28 @@ public class EventPublicController {
 
         log.info("Получаем событие: eventId={}", id);
         return eventFullDto;
+    }
+
+    /*
+    GET COMMENT - Получить комментарий по id;
+        + комментарии доступны для всех статусов событий;
+    */
+    @GetMapping("/{id}/comments/{commentId}")
+    public CommentDto getPublicCommentById(@PathVariable long id,
+                                           @PathVariable long commentId) {
+
+        log.info("Получаем комментарий commentId={} на событие eventId={}", commentId, id);
+        return commentService.getCommentById(id, commentId);
+    }
+
+    /*
+    GET COMMENT - Получить все комментарии по eventId;
+        + комментарии доступны для всех статусов событий;
+    */
+    @GetMapping("/{id}/comments")
+    public List<CommentDto> getAllPublicCommentsByEventId(@PathVariable long id) {
+
+        log.info("Получаем все комментарии на событие eventId={}", id);
+        return commentService.getAllCommentsByEventId(id);
     }
 }

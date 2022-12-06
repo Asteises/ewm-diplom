@@ -18,6 +18,8 @@ public interface RequestStorage extends JpaRepository<Request, Long> {
 
     Optional<Request> findRequestByEvent_IdAndRequester_Id(long eventId, long requesterId);
 
+    Optional<Request> findRequestByEvent_IdAndRequester_IdAndStatus(long eventId, long requesterId, String status);
+
     Long countByEvent_IdAndStatus(long eventId, String status);
 
     List<Request> findAllByEvent_IdInAndStatus(List<Long> eventsIds, String status);
