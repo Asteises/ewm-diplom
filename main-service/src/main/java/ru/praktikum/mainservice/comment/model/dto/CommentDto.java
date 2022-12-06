@@ -1,14 +1,15 @@
 package ru.praktikum.mainservice.comment.model.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CommentDto {
 
     private Long id;
@@ -20,4 +21,10 @@ public class CommentDto {
     private Long authorId;
 
     private LocalDateTime created;
+
+    // Если комментарий оставляется как ответ на другой комментарий;
+    private Long commentId;
+
+    // Если на комментарий есть ответы;
+    private List<CommentDto> answers;
 }

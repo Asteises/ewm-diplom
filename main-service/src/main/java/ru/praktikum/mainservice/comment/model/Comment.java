@@ -1,8 +1,6 @@
 package ru.praktikum.mainservice.comment.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import ru.praktikum.mainservice.event.model.Event;
 import ru.praktikum.mainservice.user.model.User;
 
@@ -12,6 +10,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "comments")
 public class Comment {
@@ -34,4 +34,10 @@ public class Comment {
 
     @Column(name = "created")
     private LocalDateTime created;
+
+    @Column(name = "comment_id")
+    private Long commentId;
+
+    @Column(name = "visible")
+    private Boolean visible;
 }

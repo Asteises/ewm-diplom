@@ -1,4 +1,4 @@
-package ru.praktikum.mainservice.comment.model.service;
+package ru.praktikum.mainservice.comment.service;
 
 import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.comment.model.dto.CommentDto;

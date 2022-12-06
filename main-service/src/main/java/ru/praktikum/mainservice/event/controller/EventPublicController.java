@@ -6,7 +6,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 import ru.praktikum.mainservice.client.StatClient;
 import ru.praktikum.mainservice.comment.model.dto.CommentDto;
-import ru.praktikum.mainservice.comment.model.service.CommentService;
+import ru.praktikum.mainservice.comment.service.CommentService;
 import ru.praktikum.mainservice.event.model.dto.EventFullDto;
 import ru.praktikum.mainservice.event.model.dto.EventShortDto;
 import ru.praktikum.mainservice.event.service.EventService;
