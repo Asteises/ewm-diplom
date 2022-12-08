@@ -64,9 +64,16 @@ public class EventMapper {
         eventFullDto.setCategory(CategoryMapper.categoryToCategoryDto(event.getCategory()));
         eventFullDto.setPaid(event.getPaid());
         eventFullDto.setEventDate(event.getEventDate().format(FORMATTER_EVENT_DATE));
+        eventFullDto.setCreatedOn(event.getCreatedOn().format(FORMATTER_EVENT_DATE));
+
+        if (event.getPublishedOn() != null) {
+            eventFullDto.setPublishedOn(event.getPublishedOn().format(FORMATTER_EVENT_DATE));
+        }
+
         eventFullDto.setInitiator(UserMapper.userToUserShortDto(event.getInitiator()));
         eventFullDto.setDescription(event.getDescription());
         eventFullDto.setParticipantLimit(event.getParticipantLimit().intValue());
+
 
         eventFullDto.setLocation(event.getLocation());
         eventFullDto.setRequestModeration(event.getRequestModeration());

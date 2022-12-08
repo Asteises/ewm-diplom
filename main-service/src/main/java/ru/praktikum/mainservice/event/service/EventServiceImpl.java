@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.category.model.Category;
 import ru.praktikum.mainservice.category.service.CategoryService;
 import ru.praktikum.mainservice.client.StatClient;
+import ru.praktikum.mainservice.client.dto.ViewStatsDto;
 import ru.praktikum.mainservice.event.enums.StateEnum;
 import ru.praktikum.mainservice.event.mapper.EventMapper;
 import ru.praktikum.mainservice.event.model.Event;
@@ -29,7 +30,12 @@ import ru.praktikum.mainservice.user.model.User;
 import ru.praktikum.mainservice.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -698,21 +704,21 @@ public class EventServiceImpl implements EventService {
         Map<Long, Integer> result = new HashMap<>();
 
         // Записываем то, что пришло в ответе по отправленным параметрам;
-        ResponseEntity<Object> response = statClient.getStats(start, end, uris, false);
+        ResponseEntity<ViewStatsDto[]> response = statClient.getStats(start, end, uris, false);
         log.info("Отправляем в клиент параметры: start={}, end={}, uris={}, unique={}", start, end, uris, false);
 
-        if (response != null) {
+        if (response != null && response.getBody() != null) {
+
             // Создаем объект из ответа;
-            ArrayList<LinkedHashMap<Object, Object>> listFromObject = (ArrayList<LinkedHashMap<Object, Object>>) response.getBody();
-            if (listFromObject != null) {
+            List<ViewStatsDto> viewStatsDtos = Arrays.asList(response.getBody());
 
-                for (LinkedHashMap<Object, Object> linkedHashMap : listFromObject) {
+            for (ViewStatsDto vsd : viewStatsDtos) {
 
-                    String id = String.valueOf(linkedHashMap.get("uri")).substring(8);
-                    result.put(Long.parseLong(id), (Integer) linkedHashMap.get("views"));
-                    log.info("Записали новую пару: {}", result.get(Long.parseLong(id)));
-                }
+                String id = String.valueOf(vsd.getUri()).substring(8);
+                result.put(Long.parseLong(id), vsd.getHits());
+                log.info("Записали новую пару: {}", result.get(Long.parseLong(id)));
             }
+            log.info("viewStatsDtos={}", viewStatsDtos);
         }
 
         log.info("Получаем просмотры события result={}", result);
