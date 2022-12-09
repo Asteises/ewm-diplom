@@ -28,15 +28,25 @@ public class RequestServiceImpl implements RequestService {
     private final EventService eventService;
     private final UserService userService;
 
-    /*
-    POST REQUEST - Добавление запроса от текущего пользователя на участие в событии
-        Обратите внимание:
-            + нельзя добавить повторный запрос;
-            + инициатор события не может добавить запрос на участие в своём событии;
-            + нельзя участвовать в неопубликованном событии;
-            + если у события достигнут лимит запросов на участие - необходимо вернуть ошибку;
-            + если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти в состояние подтвержденного;
-    */
+    /**
+     * POST REQUEST - Добавление запроса от текущего пользователя на участие в событии.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - нельзя добавить повторный запрос;
+     * <p>
+     * - инициатор события не может добавить запрос на участие в своём событии;
+     * <p>
+     * - нельзя участвовать в неопубликованном событии;
+     * <p>
+     * - если у события достигнут лимит запросов на участие - необходимо вернуть ошибку;
+     * <p>
+     * - если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти в состояние подтвержденного.
+     *
+     * @param userId  идентификатор пользователя.
+     * @param eventId идентификатор события.
+     * @return ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public ParticipationRequestDto createRequest(long userId, long eventId) {
 
@@ -75,9 +85,13 @@ public class RequestServiceImpl implements RequestService {
         return RequestMapper.fromRequestToParticipationRequestDto(request);
     }
 
-    /*
-    PATCH REQUEST - Отмена своего запроса на участие в событии
-    */
+    /**
+     * PATCH REQUEST - Отмена своего запроса на участие в событии.
+     *
+     * @param userId идентификатор пользователя;
+     * @param requestId идентификатор запроса;
+     * @return ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public ParticipationRequestDto cancelOwnRequest(long userId, long requestId) {
 

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.praktikum.mainservice.client.StatClient;
 import ru.praktikum.mainservice.event.model.dto.AdminUpdateEventRequest;
 import ru.praktikum.mainservice.event.model.dto.EventFullDto;
 import ru.praktikum.mainservice.event.service.EventService;
@@ -32,11 +31,19 @@ public class EventAdminController {
     private final EventService eventService;
     private final EventFilterValidDates eventFilterValidDates;
 
-    private final StatClient statClient;
-
-    /*
-    GET EVENT ADMIN - Поиск событий.
-        Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия;
+    /**
+     * GET EVENT ADMIN - Поиск событий.
+     * <p>
+     * Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия.
+     *
+     * @param users      коллекция идентификаторов пользователей;
+     * @param states     коллекция статусов событий;
+     * @param categories коллекция категорий;
+     * @param rangeStart начальная дата поиска событий;
+     * @param rangeEnd   окончательная дата поиска событий;
+     * @param from       с какой страницы показываем результаты поиска;
+     * @param size       какое количество результатов на страницу показываем;
+     * @return возвращаем коллекцию из EventFullDto #{@link EventFullDto}
      */
     @GetMapping
     public List<EventFullDto> searchEvents(@RequestParam @Nullable List<Long> users,
@@ -47,7 +54,6 @@ public class EventAdminController {
                                            @PositiveOrZero @RequestParam(defaultValue = "0") Integer from,
                                            @Positive @RequestParam(defaultValue = "10") Integer size) {
 
-        // Создаем переменные для валидации даты и времени;
         Map<String, LocalDateTime> dates = eventFilterValidDates.checkAndFormat(rangeStart, rangeEnd);
 
         log.info("Получаем все события с учетом параметров: users={}, states={}, categories={}, " +
@@ -73,10 +79,15 @@ public class EventAdminController {
         return result;
     }
 
-    /*
-    PUT EVENT ADMIN - Редактирование события.
-        Редактирование данных любого события администратором. Валидация данных не требуется;
-    */
+    /**
+     * PUT EVENT ADMIN - Редактирование события.
+     * <p>
+     * Редактирование данных любого события администратором. Валидация данных не требуется.
+     *
+     * @param eventId                 идентификатор события;
+     * @param adminUpdateEventRequest DTO для редактирования события администратором;
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @PutMapping("/{eventId}")
     public EventFullDto updateEventByAdmin(@PathVariable long eventId,
                                            @RequestBody AdminUpdateEventRequest adminUpdateEventRequest) {
@@ -85,12 +96,18 @@ public class EventAdminController {
         return eventService.updateEventByAdmin(eventId, adminUpdateEventRequest);
     }
 
-    /*
-    PUT EVENT ADMIN - Публикация события.
-        Обратите внимание:
-            + дата начала события должна быть не ранее чем за час от даты публикации;
-            + событие должно быть в состоянии ожидания публикации;
-    */
+    /**
+     * PUT EVENT ADMIN - Публикация события.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - дата начала события должна быть не ранее чем за час от даты публикации;
+     * <p>
+     * - событие должно быть в состоянии ожидания публикации;
+     *
+     * @param eventId идентификатор события;
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @PatchMapping("/{eventId}/publish")
     public EventFullDto eventPublishByAdmin(@PathVariable long eventId) {
 
@@ -98,11 +115,16 @@ public class EventAdminController {
         return eventService.eventPublishByAdmin(eventId);
     }
 
-    /*
-    PUT EVENT ADMIN - Отклонение события.
-        Обратите внимание:
-            + событие не должно быть опубликовано;
-    */
+    /**
+     * PUT EVENT ADMIN - Отклонение события.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - событие не должно быть опубликовано;
+     *
+     * @param eventId идентификатор события;
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @PatchMapping("/{eventId}/reject")
     public EventFullDto eventRejectByAdmin(@PathVariable long eventId) {
 
