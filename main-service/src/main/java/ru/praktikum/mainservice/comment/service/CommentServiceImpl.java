@@ -3,7 +3,7 @@ package ru.praktikum.mainservice.comment.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.praktikum.mainservice.comment.Mapper.CommentMapper;
+import ru.praktikum.mainservice.comment.mapper.CommentMapper;
 import ru.praktikum.mainservice.comment.model.Comment;
 import ru.praktikum.mainservice.comment.model.dto.CommentDto;
 import ru.praktikum.mainservice.comment.model.dto.NewCommentDto;
