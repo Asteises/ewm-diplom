@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.comment.mapper.CommentMapper;
 import ru.praktikum.mainservice.comment.model.Comment;
 import ru.praktikum.mainservice.comment.model.dto.CommentDto;
+import ru.praktikum.mainservice.comment.model.dto.EditCommentDto;
 import ru.praktikum.mainservice.comment.model.dto.NewCommentDto;
 import ru.praktikum.mainservice.comment.repository.CommentStorage;
 import ru.praktikum.mainservice.event.model.Event;
@@ -16,7 +17,9 @@ import ru.praktikum.mainservice.user.model.User;
 import ru.praktikum.mainservice.user.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,21 +31,22 @@ public class CommentServiceImpl implements CommentService {
     private final UserService userService;
     private final EventService eventService;
 
-    /*
-    POST COMMENT - Метод создания и сохранения нового комментария от пользователя.
-        + Событие должно быть опубликовано;
-
+    /**
+     * POST COMMENT - Метод создания и сохранения нового комментария от пользователя.
+     * - Событие должно быть опубликовано;
+     *
+     * @param newCommentDto #{@link NewCommentDto}
+     * @param userId        идентификатор пользователя;
+     * @param eventId       идентификатор события;
+     * @return CommentDto #{@link CommentDto}
      */
     @Override
     public CommentDto postComment(NewCommentDto newCommentDto, long userId, long eventId) {
 
-        // Проверяем, что пользователь существует;
         User author = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем, что событие существует;
         Event event = eventService.checkEventAvailableInDb(eventId);
 
-        // Проверяем, что событие опубликовано;
         eventService.checkStatusPublished(eventId);
 
         // Создаем новый комментарий, сетим в него данные и сохраняем в БД;
@@ -66,18 +70,22 @@ public class CommentServiceImpl implements CommentService {
         return result;
     }
 
-    /*
-    GET COMMENT - Получить комментарий по id;
-        + комментарии доступны для всех статусов событий;
-        + комментарий должен быть видимым;
-    */
+    /**
+     * GET COMMENT - Получить комментарий по id.
+     * <p>
+     * - комментарии доступны для всех статусов событий;
+     * <p>
+     * - комментарий должен быть видимым;
+     *
+     * @param eventId   идентификатор события;
+     * @param commentId идентификатор комментария;
+     * @return CommentDto #{@link CommentDto}
+     */
     @Override
     public CommentDto getCommentById(long eventId, long commentId) {
 
-        // Проверяем, что событие существует;
         Event event = eventService.checkEventAvailableInDb(eventId);
 
-        // Проверяем, что комментарий существует и виден;
         Comment comment = checkCommentById(commentId);
 
         // Создаем результирующий объект и мапив в него данные;
@@ -98,19 +106,23 @@ public class CommentServiceImpl implements CommentService {
         return result;
     }
 
-    /*
-    GET COMMENT - Получить все комментарии по eventId;
-        + комментарии доступны для всех статусов событий;
-        + комментарии должны быть видимыми;
-    */
+    /**
+     * GET COMMENT - Получить все комментарии по eventId.
+     * <p>
+     * - комментарии доступны для всех статусов событий;
+     * <p>
+     * - комментарии должны быть видимыми;
+     *
+     * @param eventId идентификатор события;
+     * @return возвращаем коллекцию из #{@link CommentDto}
+     */
     @Override
     public List<CommentDto> getAllCommentsByEventId(long eventId) {
 
-        // Проверяем, что событие существует;
         Event event = eventService.checkEventAvailableInDb(eventId);
 
-        // Получаем все видимые комментарии на событие;
         List<Comment> comments = commentStorage.findAllByEvent_IdAndVisibleTrue(event.getId());
+        log.info("Все комментарии на событие: {}", comments);
 
         // Создаем результирующий объект и мапим в него все комментарии;
         List<CommentDto> result = comments.stream()
@@ -118,41 +130,44 @@ public class CommentServiceImpl implements CommentService {
                 .collect(Collectors.toList());
 
         // Сетим ответы к комментариям;
-        for (CommentDto commentDto: result) {
-            commentDto.setAnswers(result
-                    .stream()
-                    .filter(c -> c.getCommentId().equals(commentDto.getId()))
-                    .collect(Collectors.toList()));
+        for (CommentDto commentDto : result) {
+//            commentDto.setAnswers(result
+//                    .stream()
+//                    .filter(c -> c.getCommentId().equals(commentDto.getId()))
+//                    .collect(Collectors.toList()));
         }
 
         log.info("Получаем все комментарии: result={}", result);
         return result;
     }
 
-    /*
-    PUT COMMENT - Пользователь вносит изменение в комментарий на событие.
-        + комментарий должен принадлежать пользователю;
-        + комментарий должен принадлежать событию;
-        + комментарий должен быть видимым;
-    */
+    /**
+     * PATCH COMMENT - Пользователь вносит изменение в комментарий на событие.
+     * <p>
+     * - комментарий должен принадлежать пользователю;
+     * <p>
+     * - комментарий должен принадлежать событию;
+     * <p>
+     * - проверять наличие события и пользователя не требуется, так как эти данные хранятся в комментарии.
+     * А комментарий не может существовать, если не существует событие и пользователь который его написал.
+     *
+     * @param editCommentDto #{@link EditCommentDto}
+     * @param userId         идентификатор пользователя;
+     * @param eventId        идентификатор события;
+     * @param commentId      идентификатор комментария;
+     * @return CommentDto #{@link CommentDto}
+     */
     @Override
-    public CommentDto editComment(NewCommentDto newCommentDto, long userId, long eventId, long commentId) {
+    public CommentDto editComment(EditCommentDto editCommentDto, long userId, long eventId, long commentId) {
 
-        // Проверять наличие события и пользователя не требуется, так как эти данные хранятся в комментарии.
-        // А комментарий не может существовать, если не существует событие к которому он оставлен
-        // или пользователь который его написал. Так как в БД мы удаляем комментарии каскадом.
-
-        // Проверяем, что комментарий существует и видимый;
         Comment comment = checkCommentById(commentId);
 
-        // Проверяем, что комментарий принадлежит данному событию;
         checkCommentOwnEvent(comment, eventId);
 
-        // Проверяем, что комментарий принадлежит данному пользователю;
         checkCommentOwnUser(comment, userId);
 
         // Сетим новые данные и обьновляем БД;
-        comment.setText(newCommentDto.getText());
+        comment.setText(editCommentDto.getText());
         commentStorage.save(comment);
 
         CommentDto result = CommentMapper.toCommentDto(comment);
@@ -161,22 +176,28 @@ public class CommentServiceImpl implements CommentService {
         return result;
     }
 
-    /*
-    DELETE COMMENT - Пользователь удаляет свой комментарий на событие.
-        + комментарий должен принадлежать пользователю;
-        + комментарий должен принадлежать событию;
-        + комментарий должен быть видимым;
-    */
+    /**
+     * DELETE COMMENT - Пользователь удаляет свой комментарий на событие.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - комментарий должен принадлежать пользователю;
+     * <p>
+     * - комментарий должен принадлежать событию;
+     * <p>
+     * - комментарий должен быть видимым;
+     *
+     * @param userId    идентификатор пользователя;
+     * @param eventId   идентификатор события;
+     * @param commentId идентификатор комментария;
+     */
     @Override
-    public void deleteComment(long userId, long eventId, long commentId) {
+    public void deleteCommentByUser(long userId, long eventId, long commentId) {
 
-        // Проверяем, что комментарий существует;
         Comment comment = checkCommentById(commentId);
 
-        // Проверяем, что комментарий принадлежит данному событию;
         checkCommentOwnEvent(comment, eventId);
 
-        // Проверяем, что комментарий принадлежит данному пользователю;
         checkCommentOwnUser(comment, userId);
 
         // Проверяем видимость комментария;
@@ -190,8 +211,34 @@ public class CommentServiceImpl implements CommentService {
         log.info("Меняем видимость комментария на false: visible={}", comment.getVisible());
     }
 
-    /*
-    Метод проверяет наличие комментария в БД и что он видимый;
+    /**
+     * DELETE COMMENT BY ADMIN - администратор меняет видимость комментария на false.
+     *
+     * @param eventId   идентификатор события;
+     * @param commentId идентификатор комментария;
+     */
+    @Override
+    public void deleteCommentByAdmin(long eventId, long commentId) {
+
+        Comment comment = checkCommentById(commentId);
+
+        checkCommentOwnEvent(comment, eventId);
+
+        if (!comment.getVisible()) {
+            throw new BadRequestException(String.format("Комментарий уже отключен comment=%s", comment));
+        }
+        // Меняем видимость комментария и обновляем в БД;
+        comment.setVisible(false);
+        commentStorage.save(comment);
+
+        log.info("Меняем видимость комментария на false: visible={}", comment.getVisible());
+    }
+
+    /**
+     * Метод проверяет наличие комментария в БД и что он видимый.
+     *
+     * @param commentId идентификатор комментария;
+     * @return Comment #{@link Comment}
      */
     private Comment checkCommentById(long commentId) {
 
@@ -199,8 +246,11 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new NotFoundException(String.format("Комментарий commentId=%s не найден.", commentId)));
     }
 
-    /*
-    Метод проверяет, что комментарий принадлежит данному пользователю;
+    /**
+     * Метод проверяет, что комментарий принадлежит данному пользователю.
+     *
+     * @param comment #{@link Comment}
+     * @param userId  идентификатор пользователя;
      */
     private void checkCommentOwnUser(Comment comment, long userId) {
         if (!comment.getAuthor().getId().equals(userId)) {
@@ -208,9 +258,25 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
+    /**
+     * Метод проверяет, принадлежит ли комментарий данному событию.
+     *
+     * @param comment #{@link Comment}
+     * @param eventId идентификатор события;
+     */
     private void checkCommentOwnEvent(Comment comment, long eventId) {
         if (!comment.getEvent().getId().equals(eventId)) {
             throw new BadRequestException(String.format("Комментарий comment=%s не принадлежит данному событию eventId=%s", comment, eventId));
         }
+    }
+
+    private Map<Long, Long> checkAnswersForCommentsByEvent(List<Comment> comments) {
+        Map<Long, Long> commentPairs = new HashMap<>();
+        for (Comment comment : comments) {
+            if (comment.getCommentId() != null) {
+                commentPairs.put(comment.getCommentId(), comment.getId());
+            }
+        }
+        return commentPairs;
     }
 }
