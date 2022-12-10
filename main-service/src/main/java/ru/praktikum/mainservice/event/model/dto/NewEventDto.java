@@ -7,7 +7,27 @@ import lombok.NoArgsConstructor;
 import ru.praktikum.mainservice.location.Location;
 
 /**
- * Новое событие
+ * Основное DTO - новое событие.
+ * <p>
+ * <p>
+ * <p>
+ * String annotation - краткое описание события;
+ * <p>
+ * Long category - категория события;
+ * <p>
+ * String description - подробное описание события;
+ * <p>
+ * String eventDate - дата и время начала события;
+ * <p>
+ * Location location - место проведения события;
+ * <p>
+ * Boolean paid - будет событие платным или нет;
+ * <p>
+ * Integer participantLimit - максимальное количество участников;
+ * <p>
+ * Boolean requestModeration - будет событие модерироваться администратором или нет;
+ * <p>
+ * String title - заголовок события;
  */
 
 @Data

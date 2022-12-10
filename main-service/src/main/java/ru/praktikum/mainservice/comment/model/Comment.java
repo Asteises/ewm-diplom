@@ -1,12 +1,44 @@
 package ru.praktikum.mainservice.comment.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.praktikum.mainservice.event.model.Event;
 import ru.praktikum.mainservice.user.model.User;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
+/**
+ * Основное Entity - Комментарий.
+ * <p>
+ * <p>
+ * <p>
+ * Long id - идентификатор;
+ * <p>
+ * String text - текст комментария;
+ * <p>
+ * Event event - событие на которое оставлен комментарий;
+ * <p>
+ * User author - пользователь, автор комментария;
+ * <p>
+ * LocalDateTime created - дата и время создания комментария;
+ * <p>
+ * Long commentId - идентификатор комментария, на который был оставлен данный комментарий;
+ * <p>
+ * Boolean visible - видимость комментария для пользователей;
+ */
 @Getter
 @Setter
 @NoArgsConstructor

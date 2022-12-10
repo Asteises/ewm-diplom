@@ -2,6 +2,7 @@ package ru.praktikum.mainservice.comment.service;
 
 import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.comment.model.dto.CommentDto;
+import ru.praktikum.mainservice.comment.model.dto.EditCommentDto;
 import ru.praktikum.mainservice.comment.model.dto.NewCommentDto;
 
 import java.util.List;
@@ -15,7 +16,9 @@ public interface CommentService {
 
     List<CommentDto> getAllCommentsByEventId(long eventId);
 
-    CommentDto editComment(NewCommentDto newCommentDto, long userId, long eventId, long commentId);
+    CommentDto editComment(EditCommentDto editCommentDto, long userId, long eventId, long commentId);
 
-    void deleteComment(long userId, long eventId, long commentId);
+    void deleteCommentByUser(long userId, long eventId, long commentId);
+
+    void deleteCommentByAdmin(long eventId, long commentId);
 }

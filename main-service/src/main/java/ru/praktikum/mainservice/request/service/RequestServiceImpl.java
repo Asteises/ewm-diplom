@@ -50,19 +50,14 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public ParticipationRequestDto createRequest(long userId, long eventId) {
 
-        // Проверяем существует событие и опубликовано оно или нет;
         Event event = eventService.checkStatusPublished(eventId);
 
-        // Проверяем есть ли доступные места на событие;
         eventService.checkRequestLimitAndModeration(event);
 
-        // Проверяем наличие пользователя;
         User currentUser = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем что текущий пользователь не является инициатором события;
         checkRequesterNotInitiator(event, currentUser);
 
-        // Проверяем что запроса на это событие еще нет;
         checkRepeatRequest(eventId, userId);
 
         // Создаем новый запрос и сетим данные;
@@ -88,7 +83,7 @@ public class RequestServiceImpl implements RequestService {
     /**
      * PATCH REQUEST - Отмена своего запроса на участие в событии.
      *
-     * @param userId идентификатор пользователя;
+     * @param userId    идентификатор пользователя;
      * @param requestId идентификатор запроса;
      * @return ParticipationRequestDto #{@link ParticipationRequestDto}
      */
@@ -103,21 +98,28 @@ public class RequestServiceImpl implements RequestService {
         return RequestMapper.fromRequestToParticipationRequestDto(request);
     }
 
-    /*
-    GET REQUEST - Получение информации о заявках текущего пользователя на участие в чужих событиях
-    */
+    /**
+     * GET REQUEST - Получение информации о заявках текущего пользователя на участие в чужих событиях.
+     *
+     * @param userId идентификатор пользователя;
+     * @return возвращаем коллекцию ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public List<ParticipationRequestDto> getRequests(long userId) {
 
         User user = userService.checkUserAvailableInDb(userId);
+
         List<Request> requests = requestStorage.findAllByRequester_Id(user.getId());
 
         log.info("Получаем информацию о всех заявках requests={} на событие пользователя userId={}.", requests.size(), userId);
         return requests.stream().map(RequestMapper::fromRequestToParticipationRequestDto).collect(Collectors.toList());
     }
 
-    /*
-    Метод для проверки существования запроса в БД;
+    /**
+     * Метод для проверки существования запроса в БД;
+     *
+     * @param requestId идентификатор запроса;
+     * @return Request #{@link Request}
      */
     @Override
     public Request checkRequestAvailableInDb(long requestId) {
@@ -127,9 +129,12 @@ public class RequestServiceImpl implements RequestService {
                         .format("Запрос с таким requestId=%s не найден", requestId)));
     }
 
-    /*
-    Метод проверяет что запрос создается впервые;
-    */
+    /**
+     * Метод проверяет что запрос создается впервые;
+     *
+     * @param eventId     идентификатор события;
+     * @param requesterId идентификатор пользователя;
+     */
     private void checkRepeatRequest(long eventId, long requesterId) {
 
         if (requestStorage.findRequestByEvent_IdAndRequester_Id(eventId, requesterId).isPresent()) {
@@ -138,8 +143,11 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
-    /*
-    Метод проверяет что реквестор не является инициатором события;
+    /**
+     * Метод проверяет что пользователь не является инициатором события.
+     *
+     * @param event     событие;
+     * @param requester пользователь;
      */
     private void checkRequesterNotInitiator(Event event, User requester) {
 
@@ -149,11 +157,18 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
+    /**
+     * Метод проверяет что пользователь имеет подтвержденный запрос на участие в событии;
+     *
+     * @param eventId     идентификатор события;
+     * @param requesterId идентификатор пользователя;
+     */
     @Override
     public void checkRequesterHasConfirmedRequest(long eventId, long requesterId) {
 
         requestStorage.findRequestByEvent_IdAndRequester_IdAndStatus(eventId, requesterId, "CONFIRMED")
-                .orElseThrow(() -> new BadRequestException(String.format("Пользователь requesterId=%s не имеет подтвержденного запроса в данном событии eventId=%s", requesterId, eventId)));
+                .orElseThrow(() -> new BadRequestException(String.format("Пользователь requesterId=%s не имеет " +
+                        "подтвержденного запроса в данном событии eventId=%s", requesterId, eventId)));
     }
 
 }

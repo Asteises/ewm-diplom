@@ -6,7 +6,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Заявка на участие в событии
+ * Заявка(запрос) на участие в событии.
+ * <p>
+ * <p>
+ * <p>
+ * Long id - идентификатор;
+ * <p>
+ * String created - дата создания заявки;
+ * <p>
+ * Long event - идентификатор события;
+ * <p>
+ * Long requester - идентификатор пользователя оставившего запрос;
+ * <p>
+ * String status - статус запроса;
  */
 @Data
 @NoArgsConstructor
