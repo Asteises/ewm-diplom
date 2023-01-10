@@ -55,6 +55,8 @@ services:
   ewm-db:
     image: postgres:14-alpine
     container_name: ewm_main_db_container
+    ports:
+      - "6542:5432"
     volumes:
       - /var/lib/postgresql/data/
     environment:
