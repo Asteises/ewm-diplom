@@ -3,7 +3,11 @@ package ru.praktikum.mainservice.event.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ru.praktikum.mainservice.client.StatClient;
 import ru.praktikum.mainservice.comment.model.dto.CommentDto;
 import ru.praktikum.mainservice.comment.service.CommentService;
@@ -31,14 +35,32 @@ public class EventPublicController {
 
     private final EventFilterValidDates eventFilterValidDates;
 
-    /*
-    GET EVENTS - Получение событий с возможностью фильтрации
-        Обратите внимание:
-            + это публичный эндпоинт, соответственно в выдаче должны быть только опубликованные события;
-            + текстовый поиск (по аннотации и подробному описанию) должен быть без учета регистра букв;
-            + если в запросе не указан диапазон дат [rangeStart-rangeEnd], то нужно выгружать события, которые произойдут позже текущей даты и времени;
-            + информация о каждом событии должна включать в себя количество просмотров и количество уже одобренных заявок на участие;
-            + информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+    /**
+     * GET EVENTS - Получение событий с возможностью фильтрации.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - это публичный эндпоинт, соответственно в выдаче должны быть только опубликованные события;
+     * <p>
+     * - текстовый поиск (по аннотации и подробному описанию) должен быть без учета регистра букв;
+     * <p>
+     * - если в запросе не указан диапазон дат [rangeStart-rangeEnd], то нужно выгружать события, которые произойдут позже текущей даты и времени;
+     * <p>
+     * - информация о каждом событии должна включать в себя количество просмотров и количество уже одобренных заявок на участие;
+     * <p>
+     * - информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+     *
+     * @param text          пользовательский текст для поиска событий;
+     * @param categories    коллекция из идентификаторов категорий;
+     * @param paid          платное или бесплатное событие;
+     * @param rangeStart    с какой даты ищем начало событий;
+     * @param rangeEnd      по какую дату ищем начало событий;
+     * @param onlyAvailable только доступные события;
+     * @param sort          варианты сортировки: по дате события (по умолчанию) или по количеству просмотров события;
+     * @param from          с какой страницы будем показывать результаты;
+     * @param size          количество результатов на странице;
+     * @param request       #{@link HttpServletRequest}
+     * @return возвращаем коллекцию из #{@link EventFullDto}
      */
     @GetMapping()
     public List<EventShortDto> getAllPublicEvents(@RequestParam @Nullable String text,
@@ -78,12 +100,20 @@ public class EventPublicController {
         return result;
     }
 
-    /*
-    Получение подробной информации об опубликованном событии по его идентификатору
-        Обратите внимание:
-            + событие должно быть опубликовано;
-            + информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов;
-            + информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+    /**
+     * Получение подробной информации об опубликованном событии по его идентификатору.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - событие должно быть опубликовано;
+     * <p>
+     * - информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов;
+     * <p>
+     * - информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+     *
+     * @param id      идентификатор события;
+     * @param request #{@link HttpServletRequest}
+     * @return EventFullDto #{@link EventFullDto}
      */
     @GetMapping("/{id}")
     public EventFullDto getPublicEventById(@PathVariable long id,
@@ -100,10 +130,17 @@ public class EventPublicController {
         return eventFullDto;
     }
 
-    /*
-    GET COMMENT - Получить комментарий по id;
-        + комментарии доступны для всех статусов событий;
-    */
+    /**
+     * GET COMMENT - Получить комментарий по id.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - комментарии доступны для всех статусов событий;
+     *
+     * @param id        идентификатор события;
+     * @param commentId идентификатор комментария;
+     * @return CommentDto #{@link CommentDto}
+     */
     @GetMapping("/{id}/comments/{commentId}")
     public CommentDto getPublicCommentById(@PathVariable long id,
                                            @PathVariable long commentId) {
@@ -112,10 +149,16 @@ public class EventPublicController {
         return commentService.getCommentById(id, commentId);
     }
 
-    /*
-    GET COMMENT - Получить все комментарии по eventId;
-        + комментарии доступны для всех статусов событий;
-    */
+    /**
+     * GET COMMENT - Получить все комментарии по eventId.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - комментарии доступны для всех статусов событий;
+     *
+     * @param id идентификатор события;
+     * @return возвращаем коллекцию из #{@link CommentDto}
+     */
     @GetMapping("/{id}/comments")
     public List<CommentDto> getAllPublicCommentsByEventId(@PathVariable long id) {
 

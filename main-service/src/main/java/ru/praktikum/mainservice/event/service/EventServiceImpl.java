@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.category.model.Category;
 import ru.praktikum.mainservice.category.service.CategoryService;
 import ru.praktikum.mainservice.client.StatClient;
+import ru.praktikum.mainservice.client.dto.ViewStatsDto;
 import ru.praktikum.mainservice.event.enums.StateEnum;
 import ru.praktikum.mainservice.event.mapper.EventMapper;
 import ru.praktikum.mainservice.event.model.Event;
@@ -29,7 +30,12 @@ import ru.praktikum.mainservice.user.model.User;
 import ru.praktikum.mainservice.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,11 +50,17 @@ public class EventServiceImpl implements EventService {
     private final RequestStorage requestStorage;
     private final StatClient statClient;
 
-    /*
-    POST EVENT - Добавление нового события:
-        Обратите внимание:
-            + дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента;
-    */
+    /**
+     * POST EVENT - Добавление нового события:
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента;
+     *
+     * @param userId      идентификатор пользователя;
+     * @param newEventDto #{@link NewEventDto}
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @Override
     public EventFullDto createEvent(long userId, NewEventDto newEventDto) {
 
@@ -88,13 +100,21 @@ public class EventServiceImpl implements EventService {
         return EventMapper.fromEventToEventFullDto(event);
     }
 
-    /*
-    PATCH EVENT - Изменение события добавленного текущим пользователем:
-        Обратите внимание:
-            + изменить можно только отмененные события или события в состоянии ожидания модерации
-            + если редактируется отменённое событие, то оно автоматически переходит в состояние ожидания модерации
-            + дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента
-    */
+    /**
+     * PATCH EVENT - Изменение события добавленного текущим пользователем.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - изменить можно только отмененные события или события в состоянии ожидания модерации;
+     * <p>
+     * - если редактируется отменённое событие, то оно автоматически переходит в состояние ожидания модерации;
+     * <p>
+     * - дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента;
+     *
+     * @param userId идентификатор пользователя;
+     * @param updateEventRequest DTO для редактирования события;
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @Override
     public EventFullDto updateEventByCurrentUser(long userId, UpdateEventRequest updateEventRequest) {
 
@@ -104,16 +124,10 @@ public class EventServiceImpl implements EventService {
         // Валидируем время события;
         checkEventCreateDate(eventDate);
 
-        /*
-        Из контроллера приходит только id пользователя,
-        а положить в Event нужно всего пользователя, дополнительно проверяем наличие пользователя в БД;
-        */
         User currentUser = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем наличие события в БД;
         Event currentEvent = checkEventAvailableInDb(updateEventRequest.getEventId());
 
-        // Проверяем что событие принадлежит текущему пользователю;
         checkOwnEvent(currentEvent, currentUser);
 
         // Проверяем чтобы событие не было опубликовано;
@@ -149,13 +163,17 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    /*
-    GET EVENTS - Получение событий добавленных текущим пользователем:
-    */
+    /**
+     * GET EVENTS - Получение событий добавленных текущим пользователем.
+     *
+     * @param userId идентификатор пользователя;
+     * @param from   какой страницы начнем просматривать события;
+     * @param size   какое количество событий будем выводить на странице;
+     * @return возвращаем коллекцию из EventFullDto #{@link EventFullDto}
+     */
     @Override
     public List<EventFullDto> getAllEventsByCurrentUser(long userId, Integer from, Integer size) {
 
-        // Проверяем, что пользователь существует;
         User user = userService.checkUserAvailableInDb(userId);
 
         // Собираем все события принадлежащие пользователю;
@@ -186,24 +204,26 @@ public class EventServiceImpl implements EventService {
         return EventMapper.fromEventToEventFullDto(event);
     }
 
-    /*
-    PATCH EVENT - Отмена события добавленного текущим пользователем:
-        Обратите внимание:
-            + Отменить можно только событие в состоянии ожидания модерации;
+    /**
+     * PATCH EVENT - Отмена события добавленного текущим пользователем.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - Отменить можно только событие в состоянии ожидания модерации;
+     *
+     * @param userId  идентификатор пользователя;
+     * @param eventId дентификатор события;
+     * @return EventFullDto #{@link EventFullDto}
      */
     @Override
     public EventFullDto cancelEventByCurrentUser(long userId, long eventId) {
 
-        // Проверяем, что пользователь существует;
         User user = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем, что событие существует;
         Event event = checkEventAvailableInDb(eventId);
 
-        // Проверяем что событие принадлежит текущему пользователю;
         checkOwnEvent(event, user);
 
-        // Проверяем статус события;
         checkStatePending(event);
 
         // Сетим статус отмены и сохраняем в БД;
@@ -217,22 +237,23 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    /*
-    GET EVENT - Получение информации о запросах на участие в событии текущего пользователя:
-    */
+    /**
+     * GET EVENT - Получение информации о запросах на участие в событии текущего пользователя:
+     *
+     * @param userId  идентификатор пользователя;
+     * @param eventId идентификатор события;
+     * @return возвращаем коллекцию ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public List<ParticipationRequestDto> getRequestsByEventByCurrentUser(long userId, long eventId) {
 
-        // Проверяем, что пользователь существует;
         User user = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем, что событие существует;
         Event event = checkEventAvailableInDb(eventId);
 
-        // Проверяем что событие принадлежит текущему пользователю;
         checkOwnEvent(event, user);
 
-        // Находим все реквесты на данное событие;
+        // Находим все запросы на данное событие;
         List<Request> requests = requestStorage.findAllByEvent_Id(eventId);
 
         // Мапим все найденные запросы в лист ParticipationRequestDto;
@@ -243,26 +264,31 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toList());
     }
 
-    /*
-    PATCH EVENT - Подтверждение чужой заявки на участие в событии текущего пользователя:
-        Обратите внимание:
-            + если для события лимит заявок равен 0 или отключена пре-модерация заявок, то подтверждение заявок не требуется;
-            + нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие;
-            + если при подтверждении данной заявки, лимит заявок для события исчерпан, то все неподтверждённые заявки необходимо отклонить;
+    /**
+     * PATCH EVENT - Подтверждение чужой заявки на участие в событии текущего пользователя.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - если для события лимит заявок равен 0 или отключена пре-модерация заявок, то подтверждение заявок не требуется;
+     * <p>
+     * - нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие;
+     * <p>
+     * - если при подтверждении данной заявки, лимит заявок для события исчерпан, то все неподтверждённые заявки необходимо отклонить;
+     *
+     * @param userId  идентификатор пользователя;
+     * @param eventId идентификатор события;
+     * @param reqId   идентификатор запроса;
+     * @return ParticipationRequestDto #{@link ParticipationRequestDto}
      */
     @Override
     public ParticipationRequestDto acceptRequestOnEventByCurrentUser(long userId, long eventId, long reqId) {
 
-        // Проверяем, что пользователь существует;
         User user = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем, что событие существует;
         Event event = checkEventAvailableInDb(eventId);
 
-        // Проверяем что событие принадлежит текущему пользователю;
         checkOwnEvent(event, user);
 
-        // Проверяем что запрос существует;
         Request request = checkRequestAvailableInDb(reqId);
 
         ParticipationRequestDto pRDto = RequestMapper.fromRequestToParticipationRequestDto(request);
@@ -293,22 +319,23 @@ public class EventServiceImpl implements EventService {
         return pRDto;
     }
 
-    /*
-   PATCH EVENT - Отклонение чужой заявки на участие в событии текущего пользователя:
-    */
+    /**
+     * PATCH EVENT - Отклонение чужой заявки на участие в событии текущего пользователя.
+     *
+     * @param userId  идентификатор пользователя;
+     * @param eventId идентификатор события;
+     * @param reqId   идентификатор запроса;
+     * @return ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public ParticipationRequestDto cancelRequestOnEventByCurrentUser(long userId, long eventId, long reqId) {
 
-        // Проверяем, что пользователь существует;
         User user = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем, что событие существует;
         Event event = checkEventAvailableInDb(eventId);
 
-        // Проверяем что событие принадлежит текущему пользователю;
         checkOwnEvent(event, user);
 
-        // Проверяем что запрос существует;
         Request request = checkRequestAvailableInDb(reqId);
 
         // Сетим новый статус;
@@ -320,14 +347,30 @@ public class EventServiceImpl implements EventService {
         return RequestMapper.fromRequestToParticipationRequestDto(request);
     }
 
-    /*
-    GET EVENTS - Получение событий с возможностью фильтрации
-        Обратите внимание:
-            + это публичный эндпоинт, соответственно в выдаче должны быть только опубликованные события;
-            + текстовый поиск (по аннотации и подробному описанию) должен быть без учета регистра букв;
-            + если в запросе не указан диапазон дат [rangeStart-rangeEnd], то нужно выгружать события, которые произойдут позже текущей даты и времени;
-            + информация о каждом событии должна включать в себя количество просмотров и количество уже одобренных заявок на участие;
-            + информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+    /**
+     * GET EVENTS - Получение событий с возможностью фильтрации.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - это публичный эндпоинт, соответственно в выдаче должны быть только опубликованные события;
+     * <p>
+     * - текстовый поиск (по аннотации и подробному описанию) должен быть без учета регистра букв;
+     * <p>
+     * - если в запросе не указан диапазон дат [rangeStart-rangeEnd], то нужно выгружать события, которые произойдут позже текущей даты и времени;
+     * <p>
+     * - информация о каждом событии должна включать в себя количество просмотров и количество уже одобренных заявок на участие;
+     * <p>
+     * - информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+     *
+     * @param text       ключевые слова введенные пользователем, по которым будем искать события;
+     * @param categories коллекция категорий;
+     * @param paid       платные события или бесплатные;
+     * @param start      дата и время начала событий;
+     * @param end        дата и время окончания событий;
+     * @param sort       сортировка по дате события (по умолчанию) или по количеству просмотров;
+     * @param from       с какой страницы будем начинать просмотр;
+     * @param size       сколько событий на страницу будем показывать;
+     * @return возвращаем коллекцию из EventShortDto #{@link EventShortDto}
      */
     @Override
     public List<EventShortDto> getAllPublicEvents(String text,
@@ -355,7 +398,6 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("По заданным параметрам события не найдены!");
         }
 
-        // Собираем id всех событий;
         List<Long> eventsIds = getCurrentEventIds(events);
 
         // Находим пары id события - просмотры;
@@ -395,20 +437,25 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    /*
-    Получение подробной информации об опубликованном событии по его идентификатору
-        Обратите внимание:
-            + событие должно быть опубликовано;
-            + информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов;
-            + информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+    /**
+     * Получение подробной информации об опубликованном событии по его идентификатору.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - событие должно быть опубликовано;
+     * <p>
+     * - информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов;
+     * <p>
+     * - информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики;
+     *
+     * @param eventId идентификатор события;
+     * @return EventFullDto #{@link EventFullDto}
      */
     @Override
     public EventFullDto getPublicEventById(long eventId) {
 
-        // Проверяем, что событие существует;
         Event event = checkEventAvailableInDb(eventId);
 
-        // Проверяем статус события;
         checkStatusPublished(eventId);
 
         EventFullDto result = EventMapper.fromEventToEventFullDto(event);
@@ -434,10 +481,20 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    /*
-    GET EVENT ADMIN - Поиск событий
-        Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия;
-    */
+    /**
+     * GET EVENT ADMIN - Поиск событий.
+     * <p>
+     * Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия;
+     *
+     * @param users      коллекция из пользователей;
+     * @param states     коллекция из статусов событий;
+     * @param categories коллекция из категорий;
+     * @param start      дата и время начала поиска событий;
+     * @param end        дата и время окончания поиска событий;
+     * @param from       с какой страницы начинаем просмотр;
+     * @param size       сколько событий на страницу будем показывать;
+     * @return возвращаем коллекцию из EventFullDto #{@link EventFullDto}
+     */
     @Override
     public List<EventFullDto> searchEvents(List<Long> users,
                                            List<String> states,
@@ -488,14 +545,18 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    /*
-    PUT EVENT ADMIN - Редактирование события.
-        Редактирование данных любого события администратором. Валидация данных не требуется;
-    */
+    /**
+     * PUT EVENT ADMIN - Редактирование события.
+     * <p>
+     * Редактирование данных любого события администратором. Валидация данных не требуется.
+     *
+     * @param eventId                 идентификатор события;
+     * @param adminUpdateEventRequest #{@link AdminUpdateEventRequest}
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @Override
     public EventFullDto updateEventByAdmin(long eventId, AdminUpdateEventRequest adminUpdateEventRequest) {
 
-        // Проверяем, что событие существует;
         Event event = checkEventAvailableInDb(eventId);
 
         // Мапим новые данные;
@@ -514,19 +575,20 @@ public class EventServiceImpl implements EventService {
         return EventMapper.fromEventToEventFullDto(event);
     }
 
-    /*
-    PUT EVENT ADMIN - Публикация события.
-        Обратите внимание:
-            + дата начала события должна быть не ранее чем за час от даты публикации;
-            + событие должно быть в состоянии ожидания публикации;
-    */
+    /**
+     * PUT EVENT ADMIN - Публикация события.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - дата начала события должна быть не ранее чем за час от даты публикации;
+     * <p>
+     * - событие должно быть в состоянии ожидания публикации;
+     */
     @Override
     public EventFullDto eventPublishByAdmin(long eventId) {
 
-        // Проверяем, что событие существует;
         Event currentEvent = checkEventAvailableInDb(eventId);
 
-        // Проверяем статус события;
         checkStatePending(currentEvent);
 
         // Проверяем дату начала события и публикации, если все в порядке, то сетим и сохраняем;
@@ -543,25 +605,27 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    /*
-    PUT EVENT ADMIN - Отклонение события.
-        Обратите внимание:
-            + событие не должно быть опубликовано;
-    */
+    /**
+     * PUT EVENT ADMIN - Отклонение события.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - событие не должно быть опубликовано;
+     *
+     * @param eventId идентификатор события;
+     * @return EventFullDto #{@link EventFullDto}
+     */
     @Override
     public EventFullDto eventRejectByAdmin(long eventId) {
 
-        // Проверяем, что событие существует;
         Event currentEvent = checkEventAvailableInDb(eventId);
 
-        // Проверяем статус события;
         checkStatePending(currentEvent);
 
         // Сетим новые данные и сохраняем в БД;
         currentEvent.setState(StateEnum.CANCELED.toString());
         eventStorage.save(currentEvent);
 
-        // Возвращаемый объект;
         EventFullDto result = EventMapper.fromEventToEventFullDto(currentEvent);
 
         log.info("Админ отклонил событие eventId={} теперь оно отменено eventStatus={}:", eventId, currentEvent.getState());
@@ -574,16 +638,24 @@ public class EventServiceImpl implements EventService {
                 .format("Запрос не найден: reqId=%s", reqId)));
     }
 
+    /**
+     * Метод проверяет, что событие находится в БД.
+     *
+     * @param eventId идентификатор события;
+     * @return Event #{@link Event}
+     */
     @Override
     public Event checkEventAvailableInDb(long eventId) {
 
         return eventStorage.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String
-                        .format("Событие не найдено: eventId=%s", eventId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Событие не найдено: eventId=%s", eventId)));
     }
 
-    /*
-    Метод для проверки инициатора события, что событие принадлежит именно этому пользователю;
+    /**
+     * Метод для проверки инициатора события, что событие принадлежит именно этому пользователю.
+     *
+     * @param event событие;
+     * @param user  пользователь;
      */
     @Override
     public void checkOwnEvent(Event event, User user) {
@@ -595,8 +667,10 @@ public class EventServiceImpl implements EventService {
         log.info("Проверяем инициатора userId={} своего события: eventId={}", user, event);
     }
 
-    /*
-    Метод проверяет статус PENDING у EventState;
+    /**
+     * Метод проверяет статус PENDING у Event (что событие находится на модерации).
+     *
+     * @param event событие;
      */
     private void checkStatePending(Event event) {
 
@@ -607,9 +681,12 @@ public class EventServiceImpl implements EventService {
         log.info("Проверяем статус у eventStateId={} : state={}", event.getId(), event.getState());
     }
 
-    /*
-    Метод проверяет статус PUBLISHED у EventState;
-    */
+    /**
+     * Метод проверяет статус PUBLISHED у Event (что событие опубликовано).
+     *
+     * @param eventId идентификатор события;
+     * @return Event #{@link Event}
+     */
     @Override
     public Event checkStatusPublished(long eventId) {
 
@@ -624,8 +701,13 @@ public class EventServiceImpl implements EventService {
         return event;
     }
 
-    /*
-    Метод проверяет время начала события и время публикации;
+    /**
+     * Метод проверяет время начала события и время публикации.
+     * <p>
+     * Событие не может быть опубликовано, если дата начала менее часа после даты публикации.
+     *
+     * @param eventDate   дата начала события;
+     * @param publishedOn дата публикации события;
      */
     private void checkEventStartDate(LocalDateTime eventDate, LocalDateTime publishedOn) {
 
@@ -636,8 +718,10 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    /*
-    Метод проверяет, чтобы событие создано было не ранее чем за два часа до начала;
+    /**
+     * Метод проверяет, чтобы событие было создано не ранее чем за два часа до начала.
+     *
+     * @param eventDate дата события;
      */
     private void checkEventCreateDate(LocalDateTime eventDate) {
 
@@ -647,9 +731,12 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    /*
-    Метод проверяет количество подтвержденных запросов на участие в событии;
-    */
+    /**
+     * Метод проверяет количество подтвержденных запросов на участие в событии.
+     *
+     * @param eventId идентификатор события;
+     * @return возвращаем количество подтвержденных запросов;
+     */
     private Long getConfirmedRequests(long eventId) {
 
         // Собираем все подтвержденные запросы на событие;
@@ -659,28 +746,33 @@ public class EventServiceImpl implements EventService {
         return confirmedRequests;
     }
 
+    /**
+     * Метод собирает все подтвержденные запросы на события.
+     *
+     * @param eventsIds коллекция из идентификаторов событий;
+     * @return возвращаем Map(Long - идентификатор события, Long - количество подтвержденных запросов)
+     */
     private Map<Long, Long> getAllConfirmedRequests(List<Long> eventsIds) {
 
+        // Собираем все подтвержденные запросы на события;
         List<Request> requests = requestStorage.findAllByEvent_IdInAndStatus(eventsIds, "CONFIRMED");
         log.info("Нашли все подтвержденные запросы на события eventsIds={}: requests={}", eventsIds, requests);
 
         Map<Long, Long> result;
 
+        // Считаем количество подтвержденных запросов и записываем для каждого события;
         result = requests.stream()
                 .collect(Collectors.groupingBy(request -> request.getEvent().getId(), Collectors.counting()));
-
-//        for (Long id : eventsIds) {
-//            result.put(id, requests.stream()
-//                    .filter(request -> Objects.equals(request.getEvent().getId(), id))
-//                    .count());
-//        }
 
         log.info("Разложили все подтвержденые запросы по событиям: result={}", result);
         return result;
     }
 
-    /*
-    Метод передает запрос в сервис статистики и возвращает количество просмотров события;
+    /**
+     * Метод передает запрос в сервис статистики и возвращает количество просмотров события.
+     *
+     * @param eventsIds коллекция из идентификаторов событий;
+     * @return возвращаем Map(Long - идентификатор события, Integer - количество просмотров события)
      */
     private Map<Long, Integer> getViewsByEventsId(List<Long> eventsIds) {
 
@@ -688,9 +780,10 @@ public class EventServiceImpl implements EventService {
         LocalDateTime start = LocalDateTime.of(2021, 12, 31, 23, 59, 59);
         LocalDateTime end = LocalDateTime.now();
 
-        // Создаем лист в который записываем uri;
+        // Создаем лист в который будем записывать uri;
         List<String> uris = new ArrayList<>();
 
+        // Записываем uri;
         for (Long eventId : eventsIds) {
             uris.add("/events/" + eventId);
         }
@@ -698,29 +791,32 @@ public class EventServiceImpl implements EventService {
         Map<Long, Integer> result = new HashMap<>();
 
         // Записываем то, что пришло в ответе по отправленным параметрам;
-        ResponseEntity<Object> response = statClient.getStats(start, end, uris, false);
+        ResponseEntity<ViewStatsDto[]> response = statClient.getStats(start, end, uris, false);
         log.info("Отправляем в клиент параметры: start={}, end={}, uris={}, unique={}", start, end, uris, false);
 
-        if (response != null) {
+        if (response != null && response.getBody() != null) {
+
             // Создаем объект из ответа;
-            ArrayList<LinkedHashMap<Object, Object>> listFromObject = (ArrayList<LinkedHashMap<Object, Object>>) response.getBody();
-            if (listFromObject != null) {
+            List<ViewStatsDto> viewStatsDtos = Arrays.asList(response.getBody());
 
-                for (LinkedHashMap<Object, Object> linkedHashMap : listFromObject) {
+            for (ViewStatsDto vsd : viewStatsDtos) {
 
-                    String id = String.valueOf(linkedHashMap.get("uri")).substring(8);
-                    result.put(Long.parseLong(id), (Integer) linkedHashMap.get("views"));
-                    log.info("Записали новую пару: {}", result.get(Long.parseLong(id)));
-                }
+                String id = String.valueOf(vsd.getUri()).substring(8);
+                result.put(Long.parseLong(id), vsd.getHits());
+                log.info("Записали новую пару: {}", result.get(Long.parseLong(id)));
             }
+            log.info("viewStatsDtos={}", viewStatsDtos);
         }
 
         log.info("Получаем просмотры события result={}", result);
         return result;
     }
 
-    /*
-    Метод принимает список событий и возвращает список их id;
+    /**
+     * Метод принимает список событий и возвращает список их id.
+     *
+     * @param events коллекция из событий;
+     * @return коллекция из идентификаторов событий;
      */
     private List<Long> getCurrentEventIds(List<Event> events) {
 
@@ -729,8 +825,11 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toList());
     }
 
-    /*
-    Метод получает все события по пришедшим id;
+    /**
+     * Метод получает все события по пришедшим id;
+     *
+     * @param ids коллекция из идентификаторов событий.
+     * @return коллекция из событий.
      */
     @Override
     public List<Event> getEventsByIds(List<Long> ids) {
@@ -739,9 +838,16 @@ public class EventServiceImpl implements EventService {
         return eventStorage.findEventsByIdIn(ids);
     }
 
-    /*
-    Метод проверяет количество одобренных заявок;
-    */
+    /**
+     * Метод проверяет количество одобренных заявок.
+     * <p>
+     * Если лимит исчерпан, будет выкинуто исключение.
+     *
+     * @param event событие;
+     * @return Если возвращается true - значит лимит не установлен или свободных мест еще много.
+     * <p>
+     * Если возвращается false - значит осталось последнее место, которое и было занято.
+     */
     @Override
     public Boolean checkRequestLimitAndModeration(Event event) {
 

@@ -9,6 +9,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.praktikum.mainservice.client.dto.EndpointHitDto;
+import ru.praktikum.mainservice.client.dto.ViewStatsDto;
 import ru.praktikum.mainservice.event.mapper.EventMapper;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,7 +49,7 @@ public class StatClient extends BaseClient {
         log.info("Передаем в сервис статистики: endpointHitDto={}", endpointHitDto);
     }
 
-    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
+    public ResponseEntity<ViewStatsDto[]> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
 
         // Создаем Map для передачи параметров;
         Map<String, Object> parameters = Map.of(
@@ -61,7 +62,7 @@ public class StatClient extends BaseClient {
         log.info("Из EventController пришел запрос с параметрами: parameters={}", parameters);
 
         // Направляем запрос с параметрами в сервис статистики, чтобы вернулся ответ ResponseEntity<Object>;
-        ResponseEntity<Object> response = get(getStatUrl, parameters);
+        ResponseEntity<ViewStatsDto[]> response = getArray(getStatUrl, parameters);
 
         log.info("Ответ от сервиса статистики: response={}", response);
         return response;

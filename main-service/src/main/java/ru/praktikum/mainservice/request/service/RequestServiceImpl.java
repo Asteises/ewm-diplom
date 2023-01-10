@@ -28,31 +28,36 @@ public class RequestServiceImpl implements RequestService {
     private final EventService eventService;
     private final UserService userService;
 
-    /*
-    POST REQUEST - Добавление запроса от текущего пользователя на участие в событии
-        Обратите внимание:
-            + нельзя добавить повторный запрос;
-            + инициатор события не может добавить запрос на участие в своём событии;
-            + нельзя участвовать в неопубликованном событии;
-            + если у события достигнут лимит запросов на участие - необходимо вернуть ошибку;
-            + если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти в состояние подтвержденного;
-    */
+    /**
+     * POST REQUEST - Добавление запроса от текущего пользователя на участие в событии.
+     * <p>
+     * Обратите внимание:
+     * <p>
+     * - нельзя добавить повторный запрос;
+     * <p>
+     * - инициатор события не может добавить запрос на участие в своём событии;
+     * <p>
+     * - нельзя участвовать в неопубликованном событии;
+     * <p>
+     * - если у события достигнут лимит запросов на участие - необходимо вернуть ошибку;
+     * <p>
+     * - если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти в состояние подтвержденного.
+     *
+     * @param userId  идентификатор пользователя.
+     * @param eventId идентификатор события.
+     * @return ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public ParticipationRequestDto createRequest(long userId, long eventId) {
 
-        // Проверяем существует событие и опубликовано оно или нет;
         Event event = eventService.checkStatusPublished(eventId);
 
-        // Проверяем есть ли доступные места на событие;
         eventService.checkRequestLimitAndModeration(event);
 
-        // Проверяем наличие пользователя;
         User currentUser = userService.checkUserAvailableInDb(userId);
 
-        // Проверяем что текущий пользователь не является инициатором события;
         checkRequesterNotInitiator(event, currentUser);
 
-        // Проверяем что запроса на это событие еще нет;
         checkRepeatRequest(eventId, userId);
 
         // Создаем новый запрос и сетим данные;
@@ -75,9 +80,13 @@ public class RequestServiceImpl implements RequestService {
         return RequestMapper.fromRequestToParticipationRequestDto(request);
     }
 
-    /*
-    PATCH REQUEST - Отмена своего запроса на участие в событии
-    */
+    /**
+     * PATCH REQUEST - Отмена своего запроса на участие в событии.
+     *
+     * @param userId    идентификатор пользователя;
+     * @param requestId идентификатор запроса;
+     * @return ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public ParticipationRequestDto cancelOwnRequest(long userId, long requestId) {
 
@@ -89,21 +98,28 @@ public class RequestServiceImpl implements RequestService {
         return RequestMapper.fromRequestToParticipationRequestDto(request);
     }
 
-    /*
-    GET REQUEST - Получение информации о заявках текущего пользователя на участие в чужих событиях
-    */
+    /**
+     * GET REQUEST - Получение информации о заявках текущего пользователя на участие в чужих событиях.
+     *
+     * @param userId идентификатор пользователя;
+     * @return возвращаем коллекцию ParticipationRequestDto #{@link ParticipationRequestDto}
+     */
     @Override
     public List<ParticipationRequestDto> getRequests(long userId) {
 
         User user = userService.checkUserAvailableInDb(userId);
+
         List<Request> requests = requestStorage.findAllByRequester_Id(user.getId());
 
         log.info("Получаем информацию о всех заявках requests={} на событие пользователя userId={}.", requests.size(), userId);
         return requests.stream().map(RequestMapper::fromRequestToParticipationRequestDto).collect(Collectors.toList());
     }
 
-    /*
-    Метод для проверки существования запроса в БД;
+    /**
+     * Метод для проверки существования запроса в БД;
+     *
+     * @param requestId идентификатор запроса;
+     * @return Request #{@link Request}
      */
     @Override
     public Request checkRequestAvailableInDb(long requestId) {
@@ -113,9 +129,12 @@ public class RequestServiceImpl implements RequestService {
                         .format("Запрос с таким requestId=%s не найден", requestId)));
     }
 
-    /*
-    Метод проверяет что запрос создается впервые;
-    */
+    /**
+     * Метод проверяет что запрос создается впервые;
+     *
+     * @param eventId     идентификатор события;
+     * @param requesterId идентификатор пользователя;
+     */
     private void checkRepeatRequest(long eventId, long requesterId) {
 
         if (requestStorage.findRequestByEvent_IdAndRequester_Id(eventId, requesterId).isPresent()) {
@@ -124,8 +143,11 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
-    /*
-    Метод проверяет что реквестор не является инициатором события;
+    /**
+     * Метод проверяет что пользователь не является инициатором события.
+     *
+     * @param event     событие;
+     * @param requester пользователь;
      */
     private void checkRequesterNotInitiator(Event event, User requester) {
 
@@ -135,11 +157,18 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
+    /**
+     * Метод проверяет что пользователь имеет подтвержденный запрос на участие в событии;
+     *
+     * @param eventId     идентификатор события;
+     * @param requesterId идентификатор пользователя;
+     */
     @Override
     public void checkRequesterHasConfirmedRequest(long eventId, long requesterId) {
 
         requestStorage.findRequestByEvent_IdAndRequester_IdAndStatus(eventId, requesterId, "CONFIRMED")
-                .orElseThrow(() -> new BadRequestException(String.format("Пользователь requesterId=%s не имеет подтвержденного запроса в данном событии eventId=%s", requesterId, eventId)));
+                .orElseThrow(() -> new BadRequestException(String.format("Пользователь requesterId=%s не имеет " +
+                        "подтвержденного запроса в данном событии eventId=%s", requesterId, eventId)));
     }
 
 }

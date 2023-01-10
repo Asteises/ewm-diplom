@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import ru.praktikum.mainservice.client.dto.ViewStatsDto;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,13 @@ public class BaseClient {
     public <T> ResponseEntity<Object> get(String patch, @Nullable Map<String, Object> parameters) {
 
         return makeAndSendRequest(HttpMethod.GET, patch, parameters, null);
+    }
+
+    public ResponseEntity<ViewStatsDto[]> getArray(String patch, @Nullable Map<String, Object> parameters) {
+
+        assert parameters != null;
+
+        return rest.getForEntity(patch, ViewStatsDto[].class, parameters);
     }
 
     private <T> ResponseEntity<Object> makeAndSendRequest(

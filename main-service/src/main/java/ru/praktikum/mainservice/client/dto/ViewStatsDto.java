@@ -23,5 +23,5 @@ public class ViewStatsDto {
     private String uri;
 
     @JsonProperty("hits")
-    private Long hits;
+    private Integer hits;
 }

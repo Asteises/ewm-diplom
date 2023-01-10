@@ -7,10 +7,20 @@ import ru.praktikum.mainservice.event.mapper.EventMapper;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * Класс для валидации даты и времени.
+ */
 @Slf4j
 @Service
 public class EventFilterValidDates {
 
+    /**
+     * Метод для валидации даты и времени.
+     *
+     * @param rangeStart начальная дата поиска событий;
+     * @param rangeEnd   окончательная дата поиска событий;
+     * @return возвращаем Map<String, LocalDateTime>
+     */
     public Map<String, LocalDateTime> checkAndFormat(String rangeStart, String rangeEnd) {
 
         // Создаем переменные для LocalDateTime;

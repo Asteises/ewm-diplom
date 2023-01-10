@@ -1,4 +1,4 @@
-package ru.praktikum.mainservice.comment.Mapper;
+package ru.praktikum.mainservice.comment.mapper;
 
 import org.springframework.stereotype.Service;
 import ru.praktikum.mainservice.comment.model.Comment;
